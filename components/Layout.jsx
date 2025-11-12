@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { 
   FiHome, FiUsers, FiCalendar, FiClock, FiSun, FiMoon, 
-  FiMenu, FiX, FiLogOut, FiSettings, FiDollarSign 
+  FiMenu, FiX, FiLogOut, FiSettings, FiDollarSign, FiStar 
 } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -32,8 +32,11 @@ export default function Layout({ children }) {
     { name: 'Empleados', href: '/empleados', icon: FiUsers },
     { name: 'Turnos', href: '/turnos', icon: FiClock },
     { name: 'Vacaciones', href: '/vacaciones', icon: FiCalendar },
+    { name: 'Logueos', href: '/logueos', icon: FiClock },
     { name: 'Control de Horas', href: '/control-horas', icon: FiClock },
+    { name: 'Pagos Extras', href: '/pagos-extras', icon: FiDollarSign },
     { name: 'Recibos', href: '/recibos', icon: FiDollarSign },
+    { name: 'Feriados', href: '/feriados', icon: FiStar },
   ];
 
   const isActive = (href) => {

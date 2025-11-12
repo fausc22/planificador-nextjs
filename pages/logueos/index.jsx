@@ -1,20 +1,20 @@
-// pages/control-horas/index.jsx - Control de horas trabajadas
+// pages/logueos/index.jsx - Registro de logueos (ingresos y egresos)
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
 import Loading from '../../components/Loading';
 import EmptyState from '../../components/EmptyState';
-import { FiClock, FiUser, FiCalendar, FiDollarSign } from 'react-icons/fi';
+import { FiClock, FiUser, FiLogIn, FiLogOut } from 'react-icons/fi';
 import { apiClient } from '../../utils/api';
 import toast from 'react-hot-toast';
 
-export default function ControlHoras() {
+export default function Logueos() {
   const [anio, setAnio] = useState(new Date().getFullYear());
   const [mes, setMes] = useState(new Date().getMonth() + 1);
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState('');
   
   const [empleados, setEmpleados] = useState([]);
-  const [registros, setRegistros] = useState([]);
+  const [logueos, setLogueos] = useState([]);
   const [loading, setLoading] = useState(false);
   const [loadingEmpleados, setLoadingEmpleados] = useState(true);
 
@@ -23,21 +23,14 @@ export default function ControlHoras() {
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
 
-  const MESES_ES = {
-    'ENERO': 'Enero', 'FEBRERO': 'Febrero', 'MARZO': 'Marzo',
-    'ABRIL': 'Abril', 'MAYO': 'Mayo', 'JUNIO': 'Junio',
-    'JULIO': 'Julio', 'AGOSTO': 'Agosto', 'SEPTIEMBRE': 'Septiembre',
-    'OCTUBRE': 'Octubre', 'NOVIEMBRE': 'Noviembre', 'DICIEMBRE': 'Diciembre'
-  };
-
   // Cargar empleados al iniciar
   useEffect(() => {
     cargarEmpleados();
   }, []);
 
-  // Cargar registros cuando cambien los filtros
+  // Cargar logueos cuando cambien los filtros
   useEffect(() => {
-    cargarRegistros();
+    cargarLogueos();
   }, [anio, mes, empleadoSeleccionado]);
 
   const cargarEmpleados = async () => {
@@ -54,54 +47,36 @@ export default function ControlHoras() {
     }
   };
 
-  const cargarRegistros = async () => {
+  const cargarLogueos = async () => {
     setLoading(true);
     try {
       const mesNombre = MESES[mes - 1].toUpperCase();
-      const url = `/control-hs/${anio}/${mesNombre}`;
+      const url = `/logueo/${anio}/${mesNombre}`;
       
       const params = empleadoSeleccionado ? { nombre_empleado: empleadoSeleccionado } : {};
       
       const response = await apiClient.get(url, { params });
       
       if (response.data.success) {
-        setRegistros(response.data.registros);
+        setLogueos(response.data.logueos);
       }
     } catch (error) {
-      console.error('Error cargando registros:', error);
-      toast.error('Error al cargar registros');
-      setRegistros([]);
+      console.error('Error cargando logueos:', error);
+      toast.error('Error al cargar logueos');
+      setLogueos([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const formatearHoras = (minutos) => {
-    const horas = Math.floor(minutos / 60);
-    const mins = minutos % 60;
-    return `${horas}h ${mins}m`;
-  };
-
-  const formatearDinero = (valor) => {
-    return new Intl.NumberFormat('es-AR', {
-      style: 'currency',
-      currency: 'ARS',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 2
-    }).format(valor);
-  };
-
-  const calcularTotales = () => {
-    const totalMinutos = registros.reduce((sum, r) => sum + (r.horas_trabajadas || 0), 0);
-    const totalDinero = registros.reduce((sum, r) => sum + (parseFloat(r.acumulado) || 0), 0);
+  const calcularEstadisticas = () => {
+    const ingresos = logueos.filter(l => l.accion === 'INGRESO').length;
+    const egresos = logueos.filter(l => l.accion === 'EGRESO').length;
     
-    return {
-      minutos: totalMinutos,
-      dinero: totalDinero
-    };
+    return { ingresos, egresos };
   };
 
-  const totales = calcularTotales();
+  const estadisticas = calcularEstadisticas();
 
   if (loadingEmpleados) {
     return <Layout><Loading /></Layout>;
@@ -110,7 +85,7 @@ export default function ControlHoras() {
   return (
     <>
       <Head>
-        <title>Control de Horas - Planificador</title>
+        <title>Logueos - Planificador</title>
       </Head>
 
       <Layout>
@@ -118,10 +93,10 @@ export default function ControlHoras() {
           {/* Header */}
           <div className="mb-6">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
-              Control de Horas
+              Logueos
             </h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              Registro de fichajes y horas trabajadas
+              Registro de ingresos y egresos de empleados
             </p>
           </div>
 
@@ -179,19 +154,19 @@ export default function ControlHoras() {
           </div>
 
           {/* Estadísticas */}
-          {!loading && registros.length > 0 && (
+          {!loading && logueos.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="card bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                      Total Registros
+                      Total Logueos
                     </p>
                     <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
-                      {registros.length}
+                      {logueos.length}
                     </p>
                   </div>
-                  <FiCalendar className="text-3xl text-blue-500" />
+                  <FiClock className="text-3xl text-blue-500" />
                 </div>
               </div>
 
@@ -199,41 +174,41 @@ export default function ControlHoras() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm text-green-600 dark:text-green-400 font-medium">
-                      Total Horas
+                      Ingresos
                     </p>
                     <p className="text-2xl font-bold text-green-900 dark:text-green-100">
-                      {formatearHoras(totales.minutos)}
+                      {estadisticas.ingresos}
                     </p>
                   </div>
-                  <FiClock className="text-3xl text-green-500" />
+                  <FiLogIn className="text-3xl text-green-500" />
                 </div>
               </div>
 
-              <div className="card bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
+              <div className="card bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">
-                      Total Acumulado
+                    <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                      Egresos
                     </p>
-                    <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
-                      {formatearDinero(totales.dinero)}
+                    <p className="text-2xl font-bold text-red-900 dark:text-red-100">
+                      {estadisticas.egresos}
                     </p>
                   </div>
-                  <FiDollarSign className="text-3xl text-purple-500" />
+                  <FiLogOut className="text-3xl text-red-500" />
                 </div>
               </div>
             </div>
           )}
 
-          {/* Tabla de Registros */}
+          {/* Tabla de Logueos */}
           <div className="card overflow-x-auto">
             {loading ? (
               <Loading />
-            ) : registros.length === 0 ? (
+            ) : logueos.length === 0 ? (
               <EmptyState
                 icon={FiClock}
-                title="No hay registros"
-                description="No se encontraron registros para el período seleccionado"
+                title="No hay logueos"
+                description="No se encontraron logueos para el período seleccionado"
               />
             ) : (
               <table className="table">
@@ -241,40 +216,36 @@ export default function ControlHoras() {
                   <tr>
                     <th>Fecha</th>
                     <th>Empleado</th>
-                    <th>Ingreso</th>
-                    <th>Egreso</th>
-                    <th>Horas Trabajadas</th>
-                    <th>Acumulado</th>
+                    <th>Acción</th>
+                    <th>Hora</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {registros.map((registro) => (
-                    <tr key={registro.id}>
-                      <td>{registro.fecha}</td>
+                  {logueos.map((logueo) => (
+                    <tr key={logueo.id}>
+                      <td>{logueo.fecha}</td>
                       <td>
                         <div className="flex items-center space-x-2">
                           <FiUser className="text-gray-400" />
-                          <span>{registro.nombre_empleado}</span>
+                          <span>{logueo.nombre_empleado}</span>
                         </div>
                       </td>
                       <td>
-                        <span className="badge badge-success">
-                          {registro.hora_ingreso}
-                        </span>
+                        {logueo.accion === 'INGRESO' ? (
+                          <span className="badge badge-success inline-flex items-center space-x-1">
+                            <FiLogIn />
+                            <span>INGRESO</span>
+                          </span>
+                        ) : (
+                          <span className="badge badge-danger inline-flex items-center space-x-1">
+                            <FiLogOut />
+                            <span>EGRESO</span>
+                          </span>
+                        )}
                       </td>
                       <td>
-                        <span className="badge badge-danger">
-                          {registro.hora_egreso}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="font-medium text-blue-600 dark:text-blue-400">
-                          {formatearHoras(registro.horas_trabajadas)}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="font-bold text-green-600 dark:text-green-400">
-                          {formatearDinero(registro.acumulado)}
+                        <span className="font-medium text-gray-900 dark:text-gray-100">
+                          {logueo.hora}
                         </span>
                       </td>
                     </tr>

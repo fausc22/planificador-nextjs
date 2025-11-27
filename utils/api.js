@@ -155,6 +155,20 @@ export const turnosAPI = {
     apiClient.delete(`/turnos/${id}`),
 };
 
+export const notificacionesAPI = {
+  obtenerLogueosFaltantes: () =>
+    apiClient.get('/notificaciones/logueos-faltantes'),
+  
+  verificarYEnviar: () =>
+    apiClient.post('/notificaciones/verificar-y-enviar'),
+  
+  obtenerEstadoWhatsApp: () =>
+    apiClient.get('/notificaciones/whatsapp/estado'),
+  
+  enviarMensajePrueba: (mensaje) =>
+    apiClient.post('/notificaciones/whatsapp/enviar-prueba', { mensaje }),
+};
+
 export const feriadosAPI = {
   obtenerTodos: () =>
     apiClient.get('/feriados'),

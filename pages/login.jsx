@@ -1,5 +1,5 @@
 // pages/login.jsx - Página de inicio de sesión
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/router';
 import Head from 'next/head';
 import { FiUser, FiLock, FiLogIn } from 'react-icons/fi';
@@ -9,6 +9,14 @@ import toast from 'react-hot-toast';
 export default function Login() {
   const router = useRouter();
   const { login, loading } = useAuth();
+
+  // Si ya hay token, redirigir al dashboard
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if (token && router.isReady) {
+      router.replace('/dashboard');
+    }
+  }, [router]);
   
   const [formData, setFormData] = useState({
     username: '',

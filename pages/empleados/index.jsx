@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
 import { empleadosAPI } from '../../utils/api';
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiUser, FiMail, FiCalendar, FiDollarSign, FiX, FiSave, FiUpload, FiGrid, FiList } from 'react-icons/fi';
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiUser, FiMail, FiCalendar, FiDollarSign, FiX, FiSave, FiUpload, FiGrid, FiList, FiAlertCircle, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
 export default function Empleados() {
@@ -29,6 +29,11 @@ export default function Empleados() {
   });
   const [fotoPreview, setFotoPreview] = useState(null);
   const [archivoFoto, setArchivoFoto] = useState(null);
+  
+  // Modal para opciones de cambio de tarifa
+  const [modalCambioTarifa, setModalCambioTarifa] = useState(false);
+  const [horaNormalAnterior, setHoraNormalAnterior] = useState(null);
+  const [opcionAplicacion, setOpcionAplicacion] = useState('desde_hoy');
 
   useEffect(() => {
     cargarEmpleados();
@@ -53,6 +58,7 @@ export default function Empleados() {
   const abrirModal = (empleado = null) => {
     if (empleado) {
       setEmpleadoEditando(empleado);
+      setHoraNormalAnterior(empleado.hora_normal);
       setFormData({
         nombre: empleado.nombre,
         apellido: empleado.apellido,
@@ -68,6 +74,7 @@ export default function Empleados() {
       }
     } else {
       setEmpleadoEditando(null);
+      setHoraNormalAnterior(null);
       setFormData({
         nombre: '',
         apellido: '',
@@ -82,13 +89,18 @@ export default function Empleados() {
       setArchivoFoto(null);
     }
     setModalAbierto(true);
+    setModalCambioTarifa(false);
+    setOpcionAplicacion('desde_hoy');
   };
 
   const cerrarModal = () => {
     setModalAbierto(false);
+    setModalCambioTarifa(false);
     setEmpleadoEditando(null);
+    setHoraNormalAnterior(null);
     setFotoPreview(null);
     setArchivoFoto(null);
+    setOpcionAplicacion('desde_hoy');
   };
 
   const handleFotoChange = (e) => {
@@ -116,6 +128,17 @@ export default function Empleados() {
       return;
     }
 
+    // Si está editando y cambió la hora_normal, mostrar modal de opciones
+    if (empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior)) {
+      setModalCambioTarifa(true);
+      return;
+    }
+
+    // Si no hay cambio de tarifa o es creación, proceder directamente
+    await guardarEmpleado();
+  };
+
+  const guardarEmpleado = async () => {
     try {
       const formDataToSend = new FormData();
       Object.keys(formData).forEach(key => {
@@ -126,9 +149,14 @@ export default function Empleados() {
         formDataToSend.append('foto_perfil', archivoFoto);
       }
 
+      // Si hay cambio de tarifa, agregar la opción seleccionada
+      if (empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior)) {
+        formDataToSend.append('aplicar_cambio_tarifa', opcionAplicacion);
+      }
+
       if (empleadoEditando) {
-        await empleadosAPI.actualizar(empleadoEditando.id, formDataToSend);
-        toast.success('Empleado actualizado exitosamente');
+        const response = await empleadosAPI.actualizar(empleadoEditando.id, formDataToSend);
+        toast.success(response.data.message || 'Empleado actualizado exitosamente');
       } else {
         const response = await empleadosAPI.crear(formDataToSend);
         if (response.data.turnosGenerados) {
@@ -147,7 +175,7 @@ export default function Empleados() {
   };
 
   const handleEliminar = async (id, nombre, apellido) => {
-    if (!confirm(`¿Eliminar a ${nombre} ${apellido}?\n\nSe eliminarán todos sus turnos asignados.`)) {
+    if (!window.confirm(`¿Eliminar a ${nombre} ${apellido}?\n\nSe eliminarán todos sus turnos asignados.`)) {
       return;
     }
 
@@ -156,7 +184,7 @@ export default function Empleados() {
       toast.success('Empleado eliminado exitosamente');
       cargarEmpleados();
     } catch (error) {
-      toast.error('Error al eliminar empleado');
+      toast.error(error.response?.data?.message || 'Error al eliminar empleado');
     }
   };
 
@@ -202,28 +230,28 @@ export default function Empleados() {
       <Layout>
         <div className="container-custom py-8">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 sm:mb-6 gap-3 sm:gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                 Empleados
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
                 {empleados.length} empleados activos
               </p>
             </div>
 
-            <div className="flex gap-2">
+            <div className="flex flex-col sm:flex-row gap-2 sm:gap-2 w-full sm:w-auto">
               <div className="flex bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
                 <button
                   onClick={() => setVistaCards(true)}
-                  className={`p-2 rounded ${vistaCards ? 'bg-white dark:bg-secondary-dark shadow' : ''}`}
+                  className={`p-2 rounded transition-colors ${vistaCards ? 'bg-white dark:bg-secondary-dark shadow' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
                   title="Vista Cards"
                 >
                   <FiGrid />
                 </button>
                 <button
                   onClick={() => setVistaCards(false)}
-                  className={`p-2 rounded ${!vistaCards ? 'bg-white dark:bg-secondary-dark shadow' : ''}`}
+                  className={`p-2 rounded transition-colors ${!vistaCards ? 'bg-white dark:bg-secondary-dark shadow' : 'hover:bg-gray-200 dark:hover:bg-gray-700'}`}
                   title="Vista Tabla"
                 >
                   <FiList />
@@ -232,17 +260,18 @@ export default function Empleados() {
 
             <button
                 onClick={() => abrirModal()}
-              className="btn-primary flex items-center space-x-2"
+                className="btn-primary flex items-center justify-center space-x-2 w-full sm:w-auto"
             >
               <FiPlus />
-              <span>Nuevo Empleado</span>
+                <span className="hidden sm:inline">Nuevo Empleado</span>
+                <span className="sm:hidden">Nuevo</span>
             </button>
             </div>
           </div>
 
           {/* Barra de búsqueda y ordenamiento */}
-          <div className="card mb-6">
-            <div className="flex flex-col sm:flex-row gap-4">
+          <div className="card mb-4 sm:mb-6">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <div className="flex-1 relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <FiSearch className="text-gray-400" />
@@ -252,14 +281,14 @@ export default function Empleados() {
                   placeholder="Buscar por nombre, apellido o email..."
                 value={busqueda}
                 onChange={(e) => setBusqueda(e.target.value)}
-                  className="input pl-10 w-full"
+                  className="input pl-10 w-full text-sm sm:text-base"
                 />
               </div>
               
               <select
                 value={ordenarPor}
                 onChange={(e) => ordenarEmpleados(e.target.value)}
-                className="px-4 py-2 border rounded-lg dark:bg-secondary-dark dark:border-gray-600"
+                className="px-3 sm:px-4 py-2 border rounded-lg dark:bg-secondary-dark dark:border-gray-600 text-sm sm:text-base"
               >
                 <option value="nombre">Ordenar por Nombre</option>
                 <option value="apellido">Ordenar por Apellido</option>
@@ -293,7 +322,7 @@ export default function Empleados() {
               </div>
             ) : vistaCards ? (
               /* VISTA CARDS */
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
                 {empleadosFiltrados.map((empleado) => (
                   <div
                     key={empleado.id}
@@ -375,17 +404,18 @@ export default function Empleados() {
                     <div className="flex gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
                       <button
                         onClick={() => abrirModal(empleado)}
-                        className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 font-medium"
+                        className="flex-1 px-2 sm:px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-1 sm:gap-2 font-medium text-sm sm:text-base"
                       >
-                        <FiEdit size={16} />
-                        Editar
+                        <FiEdit size={14} className="sm:w-4 sm:h-4" />
+                        <span className="hidden sm:inline">Editar</span>
+                        <span className="sm:hidden">Edit</span>
                       </button>
                       <button
                         onClick={() => handleEliminar(empleado.id, empleado.nombre, empleado.apellido)}
-                        className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                        className="px-2 sm:px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
                         title="Eliminar"
                       >
-                        <FiTrash2 size={16} />
+                        <FiTrash2 size={14} className="sm:w-4 sm:h-4" />
                       </button>
                     </div>
                   </div>
@@ -393,9 +423,11 @@ export default function Empleados() {
               </div>
             ) : (
               /* VISTA TABLA */
-              <div className="card overflow-hidden">
+              <>
+                {/* Vista de escritorio - Tabla */}
+                <div className="hidden md:block card overflow-hidden">
                 <div className="overflow-x-auto">
-                  <table className="table">
+                    <table className="table w-full">
                     <thead>
                       <tr>
                         <th className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => ordenarEmpleados('nombre')}>
@@ -404,11 +436,11 @@ export default function Empleados() {
                         <th className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => ordenarEmpleados('apellido')}>
                           Apellido {ordenarPor === 'apellido' && (ordenDireccion === 'asc' ? '↑' : '↓')}
                         </th>
-                        <th className="hidden md:table-cell">Email</th>
+                          <th>Email</th>
                         <th className="hidden lg:table-cell cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => ordenarEmpleados('fecha_ingreso')}>
                           Fecha Ingreso {ordenarPor === 'fecha_ingreso' && (ordenDireccion === 'asc' ? '↑' : '↓')}
                         </th>
-                        <th className="hidden lg:table-cell cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => ordenarEmpleados('hora_normal')}>
+                          <th className="cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700" onClick={() => ordenarEmpleados('hora_normal')}>
                           Tarifa/hora {ordenarPor === 'hora_normal' && (ordenDireccion === 'asc' ? '↑' : '↓')}
                         </th>
                         <th className="hidden xl:table-cell">Vacaciones</th>
@@ -430,7 +462,7 @@ export default function Empleados() {
                                   }}
                                 />
                               ) : (
-                                <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold">
+                                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
                                   {empleado.nombre[0]}
                                 </div>
                               )}
@@ -438,13 +470,13 @@ export default function Empleados() {
                             </div>
                           </td>
                           <td className="font-medium">{empleado.apellido}</td>
-                          <td className="hidden md:table-cell text-gray-600 dark:text-gray-400 text-sm">
+                            <td className="text-gray-600 dark:text-gray-400 text-sm">
                             {empleado.email || empleado.mail}
                           </td>
                           <td className="hidden lg:table-cell">
                             {empleado.fecha_ingreso}
                           </td>
-                          <td className="hidden lg:table-cell">
+                            <td>
                             <span className="font-bold text-blue-600 dark:text-blue-400">
                             ${empleado.hora_normal}
                             </span>
@@ -476,48 +508,213 @@ export default function Empleados() {
                   </table>
                 </div>
               </div>
+
+                {/* Vista móvil - Cards compactas */}
+                <div className="md:hidden space-y-3">
+                  {empleadosFiltrados.map((empleado) => (
+                    <div key={empleado.id} className="card">
+                      <div className="flex items-start gap-3">
+                        {getFotoUrl(empleado) ? (
+                          <img
+                            src={getFotoUrl(empleado)}
+                            alt={empleado.nombre}
+                            className="w-12 h-12 rounded-full object-cover flex-shrink-0"
+                            onError={(e) => {
+                              e.target.src = `https://ui-avatars.com/api/?name=${empleado.nombre}+${empleado.apellido}&size=100&background=4299E1&color=fff`;
+                            }}
+                          />
+                        ) : (
+                          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold flex-shrink-0">
+                            {empleado.nombre[0]}{empleado.apellido[0]}
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <h3 className="font-bold text-gray-900 dark:text-white truncate">
+                            {empleado.nombre} {empleado.apellido}
+                          </h3>
+                          <p className="text-xs text-gray-600 dark:text-gray-400 truncate">
+                            {empleado.email || empleado.mail}
+                          </p>
+                          <div className="flex items-center justify-between mt-2">
+                            <div className="text-xs text-gray-600 dark:text-gray-400">
+                              <span className="font-medium">Tarifa:</span> ${empleado.hora_normal}/h
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                onClick={() => abrirModal(empleado)}
+                                className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                title="Editar"
+                              >
+                                <FiEdit size={16} />
+                              </button>
+                              <button
+                                onClick={() => handleEliminar(empleado.id, empleado.nombre, empleado.apellido)}
+                                className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                title="Eliminar"
+                              >
+                                <FiTrash2 size={16} />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>
 
+        {/* MODAL DE OPCIONES DE CAMBIO DE TARIFA */}
+        {modalCambioTarifa && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-4">
+            <div className="bg-white dark:bg-secondary-dark rounded-lg shadow-xl max-w-md w-full">
+              <div className="p-6">
+                <div className="flex items-center gap-3 mb-4">
+                  <FiAlertCircle className="text-yellow-500 text-2xl" />
+                  <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                    Cambio de Tarifa Detectado
+                  </h2>
+                </div>
+                
+                <div className="mb-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                    <strong>Tarifa anterior:</strong> ${horaNormalAnterior}
+                  </p>
+                  <p className="text-sm text-gray-700 dark:text-gray-300">
+                    <strong>Nueva tarifa:</strong> ${formData.hora_normal}
+                  </p>
+                </div>
+
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+                  ¿Cómo deseas aplicar este cambio en los acumulados del planificador?
+                </p>
+
+                <div className="space-y-3 mb-6">
+                  <label className="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                    style={{ borderColor: opcionAplicacion === 'retroactivo_mes' ? '#3B82F6' : '#E5E7EB' }}>
+                    <input
+                      type="radio"
+                      name="aplicar_cambio"
+                      value="retroactivo_mes"
+                      checked={opcionAplicacion === 'retroactivo_mes'}
+                      onChange={(e) => setOpcionAplicacion(e.target.value)}
+                      className="mt-1 mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900 dark:text-white mb-1">
+                        Retroactivo - Todo el mes actual
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        Recalcula todos los días del mes actual con la nueva tarifa
+                      </div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                    style={{ borderColor: opcionAplicacion === 'desde_hoy' ? '#3B82F6' : '#E5E7EB' }}>
+                    <input
+                      type="radio"
+                      name="aplicar_cambio"
+                      value="desde_hoy"
+                      checked={opcionAplicacion === 'desde_hoy'}
+                      onChange={(e) => setOpcionAplicacion(e.target.value)}
+                      className="mt-1 mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900 dark:text-white mb-1">
+                        Desde hoy en adelante
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        Recalcula desde el día de hoy hasta el final del año
+                      </div>
+                    </div>
+                  </label>
+
+                  <label className="flex items-start p-3 border-2 rounded-lg cursor-pointer transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                    style={{ borderColor: opcionAplicacion === 'proximo_mes' ? '#3B82F6' : '#E5E7EB' }}>
+                    <input
+                      type="radio"
+                      name="aplicar_cambio"
+                      value="proximo_mes"
+                      checked={opcionAplicacion === 'proximo_mes'}
+                      onChange={(e) => setOpcionAplicacion(e.target.value)}
+                      className="mt-1 mr-3"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-900 dark:text-white mb-1">
+                        Desde el próximo mes
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-gray-400">
+                        No modifica el mes actual, aplica desde el primer día del próximo mes
+                      </div>
+                    </div>
+                  </label>
+                </div>
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => {
+                      setModalCambioTarifa(false);
+                      // Revertir el cambio de tarifa
+                      setFormData(prev => ({ ...prev, hora_normal: horaNormalAnterior }));
+                    }}
+                    className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={guardarEmpleado}
+                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2"
+                  >
+                    <FiCheck />
+                    Aplicar Cambio
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* MODAL CREAR/EDITAR */}
         {modalAbierto && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
-            <div className="bg-white dark:bg-secondary-dark rounded-lg shadow-xl max-w-2xl w-full my-8">
-              <div className="p-6">
-                <div className="flex justify-between items-center mb-6">
-                  <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-secondary-dark rounded-lg shadow-xl max-w-2xl w-full my-4 sm:my-8 max-h-[95vh] overflow-y-auto">
+              <div className="p-4 sm:p-6">
+                <div className="flex justify-between items-center mb-4 sm:mb-6">
+                  <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                     {empleadoEditando ? 'Editar Empleado' : 'Nuevo Empleado'}
                   </h2>
                   <button
                     onClick={cerrarModal}
-                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                    className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
                   >
-                    <FiX className="text-xl" />
+                    <FiX className="text-lg sm:text-xl" />
                   </button>
                 </div>
 
                 <form onSubmit={handleSubmit}>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                     {/* Foto de perfil */}
-                    <div className="md:col-span-2">
+                    <div className="sm:col-span-2">
                       <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
                         Foto de Perfil
                       </label>
-                      <div className="flex items-center gap-4">
+                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
                         {fotoPreview ? (
                           <img
                             src={fotoPreview}
                             alt="Preview"
-                            className="w-20 h-20 rounded-full object-cover border-2 border-blue-500"
+                            className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-blue-500 flex-shrink-0"
                           />
                         ) : (
-                          <div className="w-20 h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
-                            <FiUser className="text-3xl text-gray-400" />
+                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                            <FiUser className="text-2xl sm:text-3xl text-gray-400" />
                           </div>
                         )}
                         
-                        <div className="flex-1">
+                        <div className="flex-1 w-full sm:w-auto">
                           <input
                             type="file"
                             accept="image/*"
@@ -527,7 +724,7 @@ export default function Empleados() {
                           />
                           <label
                             htmlFor="foto-input"
-                            className="btn-secondary inline-flex items-center gap-2 cursor-pointer"
+                            className="btn-secondary inline-flex items-center gap-2 cursor-pointer text-sm sm:text-base"
                           >
                             <FiUpload />
                             Subir Foto
@@ -605,10 +802,17 @@ export default function Empleados() {
                         type="number"
                         value={formData.hora_normal}
                         onChange={(e) => setFormData(prev => ({ ...prev, hora_normal: e.target.value }))}
-                        className="input w-full"
+                        className="input w-full text-sm sm:text-base"
                         min="0"
+                        step="0.01"
                         required
                       />
+                      {empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior) && (
+                        <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1 flex items-center gap-1">
+                          <FiAlertCircle size={12} />
+                          Se detectó un cambio de tarifa. Se te pedirá cómo aplicarlo al guardar.
+                        </p>
+                      )}
                     </div>
 
                     {/* Días de vacaciones */}
@@ -665,20 +869,21 @@ export default function Empleados() {
                   )}
 
                   {/* Botones */}
-                  <div className="flex gap-3 mt-6">
+                  <div className="flex flex-col sm:flex-row gap-3 mt-4 sm:mt-6">
                     <button
                       type="button"
                       onClick={cerrarModal}
-                      className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
+                      className="flex-1 px-4 py-2 sm:py-3 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium text-sm sm:text-base"
                     >
                       Cancelar
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2"
+                      className="flex-1 px-4 py-2 sm:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium flex items-center justify-center gap-2 text-sm sm:text-base"
                     >
                       <FiSave />
-                      {empleadoEditando ? 'Actualizar Empleado' : 'Crear Empleado'}
+                      <span className="hidden sm:inline">{empleadoEditando ? 'Actualizar Empleado' : 'Crear Empleado'}</span>
+                      <span className="sm:hidden">{empleadoEditando ? 'Actualizar' : 'Crear'}</span>
                     </button>
                   </div>
                 </form>

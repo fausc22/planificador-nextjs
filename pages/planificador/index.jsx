@@ -3,8 +3,10 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
 import { planificadorAPI, turnosAPI } from '../../utils/api';
-import { FiChevronLeft, FiChevronRight, FiRefreshCw, FiEdit2, FiSave, FiX, FiDownload } from 'react-icons/fi';
+import { FiChevronLeft, FiChevronRight, FiRefreshCw, FiEdit2, FiSave, FiX, FiDownload, FiCalendar } from 'react-icons/fi';
 import toast from 'react-hot-toast';
+import ShiftSelector from '../../components/ShiftSelector';
+import WeeklyView from '../../components/WeeklyView';
 
 const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -14,7 +16,8 @@ const MESES = [
 const VISTAS = {
   TURNOS: 'turnos',
   HORAS: 'horas',
-  DINERO: 'acumulado'
+  DINERO: 'acumulado',
+  SEMANAL: 'semanal'
 };
 
 export default function Planificador() {
@@ -30,11 +33,12 @@ export default function Planificador() {
   const [turnoSeleccionado, setTurnoSeleccionado] = useState('');
   const [empleadoSeleccionadoMovil, setEmpleadoSeleccionadoMovil] = useState(null);
   const [vistaMobile, setVistaMobile] = useState(false);
-  
+
   // Modal PDF
   const [modalPdfAbierto, setModalPdfAbierto] = useState(false);
   const [coloresEmpleados, setColoresEmpleados] = useState({});
   const [generandoPdf, setGenerandoPdf] = useState(false);
+  const [empleadoParaPdf, setEmpleadoParaPdf] = useState('todos');
 
   useEffect(() => {
     cargarDatos();
@@ -47,7 +51,7 @@ export default function Planificador() {
     if (vistaMobile && planificador?.empleados?.length > 0 && !empleadoSeleccionadoMovil) {
       setEmpleadoSeleccionadoMovil(planificador.empleados[0]);
     }
-    
+
     // Inicializar colores por defecto para empleados
     if (planificador?.empleados && Object.keys(coloresEmpleados).length === 0) {
       const coloresDefault = {};
@@ -62,7 +66,7 @@ export default function Planificador() {
   const detectarMobile = () => {
     const isMobile = window.innerWidth < 768;
     setVistaMobile(isMobile);
-    
+
     window.addEventListener('resize', () => {
       setVistaMobile(window.innerWidth < 768);
     });
@@ -71,9 +75,9 @@ export default function Planificador() {
   const cargarDatos = async () => {
     try {
       setLoading(true);
-      
+
       let respPlanificador;
-      
+
       if (vistaActual === VISTAS.HORAS) {
         respPlanificador = await planificadorAPI.cargarPlanificador(mesActual, anioActual);
       } else if (vistaActual === VISTAS.DINERO) {
@@ -81,7 +85,7 @@ export default function Planificador() {
       } else {
         respPlanificador = await planificadorAPI.cargarPlanificador(mesActual, anioActual);
       }
-      
+
       if (respPlanificador.data.success) {
         setPlanificador(respPlanificador.data);
       }
@@ -89,12 +93,12 @@ export default function Planificador() {
       if (vistaActual === VISTAS.HORAS || vistaActual === VISTAS.DINERO) {
         const campo = vistaActual === VISTAS.HORAS ? 'horas' : 'acumulado';
         const respTotales = await planificadorAPI.cargarTotales(mesActual, anioActual, campo);
-        
+
         if (respTotales.data.success) {
           setTotales(respTotales.data.totales);
         }
       }
-      
+
     } catch (error) {
       console.error('Error al cargar datos:', error);
       toast.error('Error al cargar planificador');
@@ -132,8 +136,8 @@ export default function Planificador() {
   };
 
   const iniciarEdicion = (fecha, empleado, turnoActual) => {
-    if (vistaActual !== VISTAS.TURNOS) return;
-    
+    if (vistaActual !== VISTAS.TURNOS && vistaActual !== VISTAS.SEMANAL) return;
+
     setEditando({ fecha, empleado });
     setTurnoSeleccionado(turnoActual || 'Libre');
   };
@@ -143,16 +147,23 @@ export default function Planificador() {
     setTurnoSeleccionado('');
   };
 
-  const guardarTurno = async () => {
+  const seleccionarTurnoVisual = (turno) => {
+    setTurnoSeleccionado(turno);
+    // Guardar automáticamente al seleccionar en el selector visual
+    guardarTurno(turno);
+  };
+
+  const guardarTurno = async (turnoOverride = null) => {
     if (!editando) return;
 
     try {
       const { fecha, empleado } = editando;
-      
+      const turnoAGuardar = turnoOverride || turnoSeleccionado;
+
       const response = await planificadorAPI.actualizarTurno(mesActual, anioActual, {
         fecha,
         nombreEmpleado: empleado,
-        turno: turnoSeleccionado
+        turno: turnoAGuardar
       });
 
       if (response.data.success) {
@@ -175,15 +186,15 @@ export default function Planificador() {
     switch (vistaActual) {
       case VISTAS.TURNOS:
         return fechaData.empleados[empleado] || 'Libre';
-      
+
       case VISTAS.HORAS:
         const turno = fechaData.empleados[empleado];
         const turnoInfo = turnosDisponibles.find(t => t.turnos === turno);
         return turnoInfo ? turnoInfo.horas : 0;
-      
+
       case VISTAS.DINERO:
         return fechaData.empleados[empleado] || 0;
-      
+
       default:
         return null;
     }
@@ -198,23 +209,23 @@ export default function Planificador() {
   const getTurnoClass = (turno) => {
     if (!turno || turno === 'Libre') return 'turno-libre';
     if (typeof turno !== 'string') return 'bg-gray-100 dark:bg-gray-800';
-    
+
     const turnoLower = turno.toLowerCase();
     if (turnoLower.includes('vacacion')) return 'turno-vacaciones';
     if (turnoLower.includes('guardia')) return 'turno-guardia';
-    
+
     if (turnoLower.match(/^\d+\s*a\s*\d+$/)) {
       const horaInicio = parseInt(turnoLower.split('a')[0]);
       if (horaInicio >= 6 && horaInicio < 12) return 'turno-manana';
       if (horaInicio >= 12 && horaInicio < 18) return 'turno-tarde';
       if (horaInicio >= 18 || horaInicio < 6) return 'turno-noche';
     }
-    
+
     return 'turno-default';
   };
 
-  const empleadosFiltrados = vistaMobile && empleadoSeleccionadoMovil 
-    ? [empleadoSeleccionadoMovil] 
+  const empleadosFiltrados = vistaMobile && empleadoSeleccionadoMovil
+    ? [empleadoSeleccionadoMovil]
     : (planificador?.empleados || []);
 
   const abrirModalPdf = () => {
@@ -228,14 +239,17 @@ export default function Planificador() {
   const generarPdf = async () => {
     try {
       setGenerandoPdf(true);
-      
+
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/planeamiento/pdf/${mesActual}/${anioActual}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify({ colores: coloresEmpleados })
+        body: JSON.stringify({
+          colores: coloresEmpleados,
+          empleado: empleadoParaPdf
+        })
       });
 
       if (!response.ok) {
@@ -251,7 +265,7 @@ export default function Planificador() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      
+
       toast.success('PDF descargado exitosamente');
       cerrarModalPdf();
     } catch (error) {
@@ -353,33 +367,39 @@ export default function Planificador() {
               <div className="flex flex-wrap gap-2 border-b border-gray-200 dark:border-gray-700">
                 <button
                   onClick={() => setVistaActual(VISTAS.TURNOS)}
-                  className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-                    vistaActual === VISTAS.TURNOS
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                  }`}
+                  className={`px-4 py-2 font-medium border-b-2 transition-colors ${vistaActual === VISTAS.TURNOS
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                    }`}
                 >
                   📅 Turnos
                 </button>
                 <button
                   onClick={() => setVistaActual(VISTAS.HORAS)}
-                  className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-                    vistaActual === VISTAS.HORAS
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                  }`}
+                  className={`px-4 py-2 font-medium border-b-2 transition-colors ${vistaActual === VISTAS.HORAS
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                    }`}
                 >
                   ⏱️ Horas
                 </button>
                 <button
                   onClick={() => setVistaActual(VISTAS.DINERO)}
-                  className={`px-4 py-2 font-medium border-b-2 transition-colors ${
-                    vistaActual === VISTAS.DINERO
-                      ? 'border-blue-500 text-blue-600 dark:text-blue-400'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
-                  }`}
+                  className={`px-4 py-2 font-medium border-b-2 transition-colors ${vistaActual === VISTAS.DINERO
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                    }`}
                 >
                   💰 Dinero
+                </button>
+                <button
+                  onClick={() => setVistaActual(VISTAS.SEMANAL)}
+                  className={`px-4 py-2 font-medium border-b-2 transition-colors ${vistaActual === VISTAS.SEMANAL
+                    ? 'border-blue-500 text-blue-600 dark:text-blue-400'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300'
+                    }`}
+                >
+                  📅 Semanal
                 </button>
               </div>
             </div>
@@ -434,6 +454,18 @@ export default function Planificador() {
             </div>
           )}
 
+          {/* Vista Semanal */}
+          {vistaActual === VISTAS.SEMANAL && (
+            <div className="mb-6">
+              <WeeklyView
+                planificador={planificador}
+                mes={mesActual}
+                anio={anioActual}
+                onEditTurno={iniciarEdicion}
+              />
+            </div>
+          )}
+
           {/* Selector de empleado para móvil */}
           {vistaMobile && planificador?.empleados && (
             <div className="card mb-4">
@@ -455,192 +487,189 @@ export default function Planificador() {
           )}
 
           {/* Planificador */}
-          <div className="card overflow-hidden">
-            {loading ? (
-              <div className="flex justify-center items-center py-12">
-                <div className="spinner"></div>
-              </div>
-            ) : !planificador ? (
-              <div className="text-center py-12">
-                <p className="text-gray-500 dark:text-gray-400">
-                  No hay datos disponibles
-                </p>
-              </div>
-            ) : (
-              <>
-                {/* Grid del planificador */}
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead className="sticky top-0 bg-gray-100 dark:bg-secondary-dark z-10">
-                      <tr>
-                        <th className="sticky left-0 bg-gray-100 dark:bg-secondary-dark px-4 py-3 text-left font-semibold z-20 border-r border-gray-300 dark:border-gray-600">
-                          Fecha
-                        </th>
-                        {empleadosFiltrados.map((empleado) => (
-                          <th key={empleado} className="px-3 py-3 text-center font-semibold min-w-[100px]">
-                            {vistaMobile ? '' : empleado}
-                          </th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {planificador.fechas && planificador.fechas.map((fecha) => (
-                        <tr
-                          key={fecha.fecha}
-                          className={`border-b border-gray-200 dark:border-gray-700 ${
-                            fecha.esFeriado ? 'bg-red-50 dark:bg-red-900/10' : ''
-                          }`}
-                        >
-                          <td className="sticky left-0 bg-white dark:bg-secondary-dark px-4 py-3 font-medium border-r border-gray-300 dark:border-gray-600">
-                            <div>
-                              <div className="text-gray-900 dark:text-white font-bold">
-                                {fecha.fecha}
-                              </div>
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {fecha.diaSemana}
-                              </div>
-                            </div>
-                          </td>
-                          
-                          {empleadosFiltrados.map((empleado) => {
-                            const valor = getValorCelda(fecha.fecha, empleado);
-                            const estaEditando = editando?.fecha === fecha.fecha && editando?.empleado === empleado;
-
-                            return (
-                              <td key={`${fecha.fecha}-${empleado}`} className="px-2 py-2">
-                                {estaEditando ? (
-                                  // Modo edición
-                                  <div className={vistaMobile ? "flex flex-col gap-2" : "flex items-center gap-1"}>
-                                    <select
-                                      value={turnoSeleccionado}
-                                      onChange={(e) => setTurnoSeleccionado(e.target.value)}
-                                      className={`flex-1 border rounded dark:bg-gray-700 dark:border-gray-600 ${
-                                        vistaMobile ? 'px-3 py-2 text-base' : 'px-2 py-1 text-xs'
-                                      }`}
-                                      autoFocus
-                                    >
-                                      {turnosDisponibles.map((t) => (
-                                        <option key={t.id} value={t.turnos}>
-                                          {t.turnos} {vistaMobile && `(${t.horas}h)`}
-                                        </option>
-                                      ))}
-                                    </select>
-                                    {vistaMobile ? (
-                                      <div className="flex gap-2">
-                                        <button
-                                          onClick={guardarTurno}
-                                          className="flex-1 px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium"
-                                        >
-                                          <FiSave className="inline mr-1" />
-                                          Guardar
-                                        </button>
-                                        <button
-                                          onClick={cancelarEdicion}
-                                          className="flex-1 px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 font-medium"
-                                        >
-                                          <FiX className="inline mr-1" />
-                                          Cancelar
-                                        </button>
-                                      </div>
-                                    ) : (
-                                      <>
-                                        <button
-                                          onClick={guardarTurno}
-                                          className="p-1 text-green-600 hover:bg-green-100 rounded"
-                                        >
-                                          <FiSave size={14} />
-                                        </button>
-                                        <button
-                                          onClick={cancelarEdicion}
-                                          className="p-1 text-red-600 hover:bg-red-100 rounded"
-                                        >
-                                          <FiX size={14} />
-                                        </button>
-                                      </>
-                                    )}
-                                  </div>
-                                ) : (
-                                  // Modo visualización
-                                  <div
-                                    onClick={() => vistaActual === VISTAS.TURNOS && iniciarEdicion(fecha.fecha, empleado, valor)}
-                                    className={`turno-cell ${
-                                      vistaActual === VISTAS.TURNOS 
-                                        ? getTurnoClass(valor) 
-                                        : (valor > 0 
-                                            ? 'bg-blue-50 dark:bg-blue-900 text-blue-900 dark:text-blue-100' 
-                                            : 'bg-gray-50 dark:bg-gray-800 text-gray-400')
-                                    } ${
-                                      vistaActual === VISTAS.TURNOS ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''
-                                    } ${
-                                      vistaMobile ? 'min-h-[60px] text-base' : 'min-h-[40px] text-sm'
-                                    } group relative`}
-                                  >
-                                    <span className="font-medium">
-                                      {vistaActual === VISTAS.TURNOS && valor}
-                                      {vistaActual === VISTAS.HORAS && (valor > 0 ? `${valor}h` : '-')}
-                                      {vistaActual === VISTAS.DINERO && (valor > 0 ? `$${valor.toLocaleString('es-AR')}` : '-')}
-                                    </span>
-                                    {vistaActual === VISTAS.TURNOS && !vistaMobile && (
-                                      <FiEdit2 
-                                        size={12} 
-                                        className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-500"
-                                      />
-                                    )}
-                                  </div>
-                                )}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))}
-                      
-                      {/* Fila de totales */}
-                      {vistaActual !== VISTAS.TURNOS && !vistaMobile && (
-                        <tr className="bg-blue-50 dark:bg-blue-900/20 font-bold border-t-2 border-blue-500">
-                          <td className="sticky left-0 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 border-r border-gray-300 dark:border-gray-600">
-                            <div className="text-gray-900 dark:text-white font-bold">
-                              TOTAL MES
-                            </div>
-                          </td>
-                          {empleadosFiltrados.map((empleado) => {
-                            const total = getTotalEmpleado(empleado);
-                            return (
-                              <td key={`total-${empleado}`} className="px-3 py-3 text-center">
-                                <div className="font-bold text-blue-600 dark:text-blue-400 text-base">
-                                  {vistaActual === VISTAS.HORAS && `${total}h`}
-                                  {vistaActual === VISTAS.DINERO && `$${Number(total).toLocaleString('es-AR')}`}
-                                </div>
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      )}
-                      
-                      {/* Total móvil - al final como card */}
-                    </tbody>
-                  </table>
+          {vistaActual !== VISTAS.SEMANAL && (
+            <div className="card overflow-hidden">
+              {loading ? (
+                <div className="flex justify-center items-center py-12">
+                  <div className="spinner"></div>
                 </div>
+              ) : !planificador ? (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No hay datos disponibles
+                  </p>
+                </div>
+              ) : (
+                <>
+                  {/* Grid del planificador */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="sticky top-0 bg-gray-100 dark:bg-secondary-dark z-10">
+                        <tr>
+                          <th className="sticky left-0 bg-gray-100 dark:bg-secondary-dark px-4 py-3 text-left font-semibold z-20 border-r border-gray-300 dark:border-gray-600">
+                            Fecha
+                          </th>
+                          {empleadosFiltrados.map((empleado) => (
+                            <th key={empleado} className="px-3 py-3 text-center font-semibold min-w-[100px]">
+                              {vistaMobile ? '' : empleado}
+                            </th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {planificador.fechas && planificador.fechas.map((fecha) => (
+                          <tr
+                            key={fecha.fecha}
+                            className={`border-b border-gray-200 dark:border-gray-700 ${fecha.esFeriado ? 'bg-red-50 dark:bg-red-900/10' : ''
+                              }`}
+                          >
+                            <td className="sticky left-0 bg-white dark:bg-secondary-dark px-4 py-3 font-medium border-r border-gray-300 dark:border-gray-600">
+                              <div>
+                                <div className="text-gray-900 dark:text-white font-bold">
+                                  {fecha.fecha}
+                                </div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  {fecha.diaSemana}
+                                </div>
+                              </div>
+                            </td>
 
-                {/* Total mensual en móvil */}
-                {vistaMobile && vistaActual !== VISTAS.TURNOS && empleadoSeleccionadoMovil && (
-                  <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                    <div className="text-center">
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                        Total {MESES[mesActual - 1]}
-                      </p>
-                      <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-                        {vistaActual === VISTAS.HORAS && `${getTotalEmpleado(empleadoSeleccionadoMovil)}h`}
-                        {vistaActual === VISTAS.DINERO && `$${Number(getTotalEmpleado(empleadoSeleccionadoMovil)).toLocaleString('es-AR')}`}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        {empleadoSeleccionadoMovil}
-                      </p>
-                    </div>
+                            {empleadosFiltrados.map((empleado) => {
+                              const valor = getValorCelda(fecha.fecha, empleado);
+                              const estaEditando = editando?.fecha === fecha.fecha && editando?.empleado === empleado;
+
+                              return (
+                                <td key={`${fecha.fecha}-${empleado}`} className="px-2 py-2">
+                                  {estaEditando ? (
+                                    // Modo edición
+                                    <div className={vistaMobile ? "flex flex-col gap-2" : "flex items-center gap-1"}>
+                                      <select
+                                        value={turnoSeleccionado}
+                                        onChange={(e) => setTurnoSeleccionado(e.target.value)}
+                                        className={`flex-1 border rounded dark:bg-gray-700 dark:border-gray-600 ${vistaMobile ? 'px-3 py-2 text-base' : 'px-2 py-1 text-xs'
+                                          }`}
+                                        autoFocus
+                                      >
+                                        {turnosDisponibles.map((t) => (
+                                          <option key={t.id} value={t.turnos}>
+                                            {t.turnos} {vistaMobile && `(${t.horas}h)`}
+                                          </option>
+                                        ))}
+                                      </select>
+                                      {vistaMobile ? (
+                                        <div className="flex gap-2">
+                                          <button
+                                            onClick={guardarTurno}
+                                            className="flex-1 px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700 font-medium"
+                                          >
+                                            <FiSave className="inline mr-1" />
+                                            Guardar
+                                          </button>
+                                          <button
+                                            onClick={cancelarEdicion}
+                                            className="flex-1 px-3 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 font-medium"
+                                          >
+                                            <FiX className="inline mr-1" />
+                                            Cancelar
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <>
+                                          <button
+                                            onClick={guardarTurno}
+                                            className="p-1 text-green-600 hover:bg-green-100 rounded"
+                                          >
+                                            <FiSave size={14} />
+                                          </button>
+                                          <button
+                                            onClick={cancelarEdicion}
+                                            className="p-1 text-red-600 hover:bg-red-100 rounded"
+                                          >
+                                            <FiX size={14} />
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    // Modo visualización
+                                    <div
+                                      onClick={() => vistaActual === VISTAS.TURNOS && iniciarEdicion(fecha.fecha, empleado, valor)}
+                                      className={`turno-cell ${vistaActual === VISTAS.TURNOS
+                                        ? getTurnoClass(valor)
+                                        : (valor > 0
+                                          ? 'bg-blue-50 dark:bg-blue-900 text-blue-900 dark:text-blue-100'
+                                          : 'bg-gray-50 dark:bg-gray-800 text-gray-400')
+                                        } ${vistaActual === VISTAS.TURNOS ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''
+                                        } ${vistaMobile ? 'min-h-[60px] text-base' : 'min-h-[40px] text-sm'
+                                        } group relative`}
+                                    >
+                                      <span className="font-medium">
+                                        {vistaActual === VISTAS.TURNOS && valor}
+                                        {vistaActual === VISTAS.HORAS && (valor > 0 ? `${valor}h` : '-')}
+                                        {vistaActual === VISTAS.DINERO && (valor > 0 ? `$${valor.toLocaleString('es-AR')}` : '-')}
+                                      </span>
+                                      {vistaActual === VISTAS.TURNOS && !vistaMobile && (
+                                        <FiEdit2
+                                          size={12}
+                                          className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 transition-opacity text-gray-500"
+                                        />
+                                      )}
+                                    </div>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        ))}
+
+                        {/* Fila de totales */}
+                        {vistaActual !== VISTAS.TURNOS && !vistaMobile && (
+                          <tr className="bg-blue-50 dark:bg-blue-900/20 font-bold border-t-2 border-blue-500">
+                            <td className="sticky left-0 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 border-r border-gray-300 dark:border-gray-600">
+                              <div className="text-gray-900 dark:text-white font-bold">
+                                TOTAL MES
+                              </div>
+                            </td>
+                            {empleadosFiltrados.map((empleado) => {
+                              const total = getTotalEmpleado(empleado);
+                              return (
+                                <td key={`total-${empleado}`} className="px-3 py-3 text-center">
+                                  <div className="font-bold text-blue-600 dark:text-blue-400 text-base">
+                                    {vistaActual === VISTAS.HORAS && `${total}h`}
+                                    {vistaActual === VISTAS.DINERO && `$${Number(total).toLocaleString('es-AR')}`}
+                                  </div>
+                                </td>
+                              );
+                            })}
+                          </tr>
+                        )}
+
+                        {/* Total móvil - al final como card */}
+                      </tbody>
+                    </table>
                   </div>
-                )}
-              </>
-            )}
-          </div>
+
+                  {/* Total mensual en móvil */}
+                  {vistaMobile && vistaActual !== VISTAS.TURNOS && empleadoSeleccionadoMovil && (
+                    <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      <div className="text-center">
+                        <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                          Total {MESES[mesActual - 1]}
+                        </p>
+                        <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                          {vistaActual === VISTAS.HORAS && `${getTotalEmpleado(empleadoSeleccionadoMovil)}h`}
+                          {vistaActual === VISTAS.DINERO && `$${Number(getTotalEmpleado(empleadoSeleccionadoMovil)).toLocaleString('es-AR')}`}
+                        </p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                          {empleadoSeleccionadoMovil}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
 
         {/* MODAL PDF - Configuración de Colores */}
@@ -663,8 +692,27 @@ export default function Planificador() {
 
                 <div className="mb-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                   <p className="text-sm text-blue-800 dark:text-blue-200">
-                    📅 <strong>{MESES[mesActual - 1]} {anioActual}</strong> - Selecciona colores para cada empleado en el PDF
+                    📅 <strong>{MESES[mesActual - 1]} {anioActual}</strong> - Selecciona opciones para el PDF
                   </p>
+                </div>
+
+                {/* Selector de tipo de PDF */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                    ¿Qué desea descargar?
+                  </label>
+                  <select
+                    value={empleadoParaPdf}
+                    onChange={(e) => setEmpleadoParaPdf(e.target.value)}
+                    className="w-full px-4 py-2 border rounded-lg dark:bg-gray-700 dark:border-gray-600"
+                  >
+                    <option value="todos">Todos los empleados (Grilla completa)</option>
+                    <optgroup label="Empleado individual">
+                      {planificador?.empleados?.map(emp => (
+                        <option key={emp} value={emp}>{emp}</option>
+                      ))}
+                    </optgroup>
+                  </select>
                 </div>
 
                 {/* Selectores de color por empleado */}
@@ -686,7 +734,7 @@ export default function Planificador() {
                           }))}
                           className="w-12 h-12 rounded cursor-pointer border-2 border-gray-300"
                         />
-                        <div 
+                        <div
                           className="w-24 h-10 rounded border border-gray-300"
                           style={{ backgroundColor: coloresEmpleados[empleado] || '#E3F2FD' }}
                         ></div>
@@ -775,6 +823,20 @@ export default function Planificador() {
           </div>
         )}
 
+        {/* Modal Selector de Turnos */}
+        {editando && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="w-full max-w-4xl">
+              <ShiftSelector
+                turnos={turnosDisponibles}
+                turnoSeleccionado={turnoSeleccionado}
+                onSelect={seleccionarTurnoVisual}
+                onCancel={cancelarEdicion}
+              />
+            </div>
+          </div>
+        )}
+
         <style jsx>{`
           .turno-cell {
             @apply px-3 py-2 rounded text-center font-medium transition-all flex items-center justify-center;
@@ -808,7 +870,7 @@ export default function Planificador() {
             @apply bg-blue-50 dark:bg-blue-900 text-blue-800 dark:text-blue-200 border border-blue-200 dark:border-blue-800;
           }
         `}</style>
-      </Layout>
+      </Layout >
     </>
   );
 }

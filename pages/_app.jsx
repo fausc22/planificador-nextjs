@@ -1,11 +1,19 @@
 // pages/_app.jsx - Configuración global de la aplicación
 import { useEffect } from 'react';
+import { useRouter } from 'next/router';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '../context/AuthContext';
 import { ThemeProvider } from '../context/ThemeContext';
+import ProtectedRoute from '../components/ProtectedRoute';
 import '../styles/globals.css';
 
+// Rutas públicas que no requieren autenticación
+const PUBLIC_ROUTES = ['/logueo', '/login', '/marcar-asistencia'];
+
 export default function App({ Component, pageProps }) {
+  const router = useRouter();
+  const isPublicRoute = PUBLIC_ROUTES.includes(router.pathname);
+
   useEffect(() => {
     // Prevenir zoom en iOS
     document.addEventListener('gesturestart', function (e) {
@@ -27,7 +35,13 @@ export default function App({ Component, pageProps }) {
   return (
     <ThemeProvider>
       <AuthProvider>
-        <Component {...pageProps} />
+        {isPublicRoute ? (
+          <Component {...pageProps} />
+        ) : (
+          <ProtectedRoute>
+            <Component {...pageProps} />
+          </ProtectedRoute>
+        )}
         
         {/* Toast notifications globales */}
         <Toaster

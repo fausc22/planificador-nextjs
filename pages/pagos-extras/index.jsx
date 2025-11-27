@@ -21,6 +21,8 @@ export default function PagosExtras() {
   
   // Modal
   const [modalAbierto, setModalAbierto] = useState(false);
+  const [modalEliminarAbierto, setModalEliminarAbierto] = useState(false);
+  const [extraEliminar, setExtraEliminar] = useState(null);
   const [extraEditando, setExtraEditando] = useState(null);
   const [formData, setFormData] = useState({
     nombre_empleado: '',
@@ -30,6 +32,7 @@ export default function PagosExtras() {
     monto: '',
     descripcion: ''
   });
+  const [errores, setErrores] = useState({});
 
   const MESES = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -112,6 +115,7 @@ export default function PagosExtras() {
   const cerrarModal = () => {
     setModalAbierto(false);
     setExtraEditando(null);
+    setErrores({});
     setFormData({
       nombre_empleado: '',
       mes: '',
@@ -122,22 +126,60 @@ export default function PagosExtras() {
     });
   };
 
+  const validarFormulario = () => {
+    const nuevosErrores = {};
+
+    if (!formData.nombre_empleado || formData.nombre_empleado.trim() === '') {
+      nuevosErrores.nombre_empleado = 'El empleado es obligatorio';
+    }
+
+    if (!formData.categoria || formData.categoria.trim() === '') {
+      nuevosErrores.categoria = 'La categoría es obligatoria';
+    } else if (formData.categoria.trim().length < 2) {
+      nuevosErrores.categoria = 'La categoría debe tener al menos 2 caracteres';
+    }
+
+    if (!formData.monto || formData.monto === '') {
+      nuevosErrores.monto = 'El monto es obligatorio';
+    } else {
+      const montoNum = parseFloat(formData.monto);
+      if (isNaN(montoNum) || montoNum <= 0) {
+        nuevosErrores.monto = 'El monto debe ser un número positivo';
+      }
+    }
+
+    if (!formData.descripcion || formData.descripcion.trim() === '') {
+      nuevosErrores.descripcion = 'La descripción es obligatoria';
+    } else if (formData.descripcion.trim().length < 3) {
+      nuevosErrores.descripcion = 'La descripción debe tener al menos 3 caracteres';
+    }
+
+    setErrores(nuevosErrores);
+    return Object.keys(nuevosErrores).length === 0;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.nombre_empleado || !formData.categoria || !formData.monto || !formData.descripcion) {
-      toast.error('Completa todos los campos');
+    if (!validarFormulario()) {
+      toast.error('Por favor, corrige los errores en el formulario');
       return;
     }
 
     try {
+      // Preparar datos para enviar
+      const datosEnviar = {
+        ...formData,
+        monto: parseFloat(formData.monto)
+      };
+
       if (extraEditando) {
         // Actualizar
-        await apiClient.put(`/extras/${anio}/${extraEditando.id}`, formData);
+        await apiClient.put(`/extras/${anio}/${extraEditando.id}`, datosEnviar);
         toast.success('Pago extra actualizado exitosamente');
       } else {
         // Crear
-        await apiClient.post(`/extras/${anio}`, formData);
+        await apiClient.post(`/extras/${anio}`, datosEnviar);
         toast.success('Pago extra creado exitosamente');
       }
       
@@ -145,22 +187,41 @@ export default function PagosExtras() {
       cargarExtras();
     } catch (error) {
       console.error('Error al guardar pago extra:', error);
+      
+      // Manejar errores de validación del backend
+      if (error.response?.data?.errors) {
+        const erroresBackend = {};
+        error.response.data.errors.forEach(err => {
+          erroresBackend[err.field] = err.message;
+        });
+        setErrores(erroresBackend);
+      }
+      
       toast.error(error.response?.data?.message || 'Error al guardar pago extra');
     }
   };
 
-  const handleEliminar = async (id, categoria) => {
-    if (!confirm(`¿Eliminar el pago extra "${categoria}"?`)) {
-      return;
-    }
+  const abrirModalEliminar = (extra) => {
+    setExtraEliminar(extra);
+    setModalEliminarAbierto(true);
+  };
+
+  const cerrarModalEliminar = () => {
+    setModalEliminarAbierto(false);
+    setExtraEliminar(null);
+  };
+
+  const handleEliminar = async () => {
+    if (!extraEliminar) return;
 
     try {
-      await apiClient.delete(`/extras/${anio}/${id}`);
+      await apiClient.delete(`/extras/${anio}/${extraEliminar.id}`);
       toast.success('Pago extra eliminado exitosamente');
+      cerrarModalEliminar();
       cargarExtras();
     } catch (error) {
       console.error('Error al eliminar:', error);
-      toast.error('Error al eliminar pago extra');
+      toast.error(error.response?.data?.message || 'Error al eliminar pago extra');
     }
   };
 
@@ -387,7 +448,7 @@ export default function PagosExtras() {
                             <FiEdit />
                           </button>
                           <button
-                            onClick={() => handleEliminar(extra.id, extra.categoria)}
+                            onClick={() => abrirModalEliminar(extra)}
                             className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                             title="Eliminar"
                           >
@@ -429,8 +490,13 @@ export default function PagosExtras() {
                   </label>
                   <select
                     value={formData.nombre_empleado}
-                    onChange={(e) => setFormData({ ...formData, nombre_empleado: e.target.value })}
-                    className="input w-full"
+                    onChange={(e) => {
+                      setFormData({ ...formData, nombre_empleado: e.target.value });
+                      if (errores.nombre_empleado) {
+                        setErrores({ ...errores, nombre_empleado: null });
+                      }
+                    }}
+                    className={`input w-full ${errores.nombre_empleado ? 'border-red-500' : ''}`}
                     required
                   >
                     <option value="">Seleccionar empleado...</option>
@@ -440,6 +506,9 @@ export default function PagosExtras() {
                       </option>
                     ))}
                   </select>
+                  {errores.nombre_empleado && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errores.nombre_empleado}</p>
+                  )}
                 </div>
 
                 {/* Tipo (Detalle) */}
@@ -466,11 +535,19 @@ export default function PagosExtras() {
                   <input
                     type="text"
                     value={formData.categoria}
-                    onChange={(e) => setFormData({ ...formData, categoria: e.target.value })}
-                    className="input w-full"
+                    onChange={(e) => {
+                      setFormData({ ...formData, categoria: e.target.value });
+                      if (errores.categoria) {
+                        setErrores({ ...errores, categoria: null });
+                      }
+                    }}
+                    className={`input w-full ${errores.categoria ? 'border-red-500' : ''}`}
                     placeholder="Ej: Horas Extras, Premio, Adelanto, etc."
                     required
                   />
+                  {errores.categoria && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errores.categoria}</p>
+                  )}
                 </div>
 
                 {/* Monto */}
@@ -481,13 +558,21 @@ export default function PagosExtras() {
                   <input
                     type="number"
                     value={formData.monto}
-                    onChange={(e) => setFormData({ ...formData, monto: e.target.value })}
-                    className="input w-full"
+                    onChange={(e) => {
+                      setFormData({ ...formData, monto: e.target.value });
+                      if (errores.monto) {
+                        setErrores({ ...errores, monto: null });
+                      }
+                    }}
+                    className={`input w-full ${errores.monto ? 'border-red-500' : ''}`}
                     placeholder="0"
                     min="0"
                     step="0.01"
                     required
                   />
+                  {errores.monto && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errores.monto}</p>
+                  )}
                 </div>
 
                 {/* Descripción */}
@@ -497,12 +582,20 @@ export default function PagosExtras() {
                   </label>
                   <textarea
                     value={formData.descripcion}
-                    onChange={(e) => setFormData({ ...formData, descripcion: e.target.value })}
-                    className="input w-full"
+                    onChange={(e) => {
+                      setFormData({ ...formData, descripcion: e.target.value });
+                      if (errores.descripcion) {
+                        setErrores({ ...errores, descripcion: null });
+                      }
+                    }}
+                    className={`input w-full ${errores.descripcion ? 'border-red-500' : ''}`}
                     placeholder="Detalle del pago extra..."
                     rows={3}
                     required
                   />
+                  {errores.descripcion && (
+                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errores.descripcion}</p>
+                  )}
                 </div>
 
                 {/* Botones */}
@@ -522,6 +615,71 @@ export default function PagosExtras() {
                   </button>
                 </div>
               </form>
+            </div>
+          </div>
+        )}
+
+        {/* Modal de Confirmación de Eliminación */}
+        {modalEliminarAbierto && extraEliminar && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-secondary-dark rounded-lg shadow-xl max-w-md w-full">
+              {/* Header del Modal */}
+              <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+                  Confirmar Eliminación
+                </h2>
+                <button
+                  onClick={cerrarModalEliminar}
+                  className="p-2 hover:bg-gray-100 dark:hover:bg-ternary-dark rounded-lg transition-colors"
+                >
+                  <FiX className="text-xl text-gray-500" />
+                </button>
+              </div>
+
+              {/* Contenido */}
+              <div className="p-6">
+                <p className="text-gray-700 dark:text-gray-300 mb-4">
+                  ¿Estás seguro de que deseas eliminar este pago extra?
+                </p>
+                <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 mb-4">
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    <span className="font-medium">Empleado:</span> {extraEliminar.nombre_empleado}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    <span className="font-medium">Categoría:</span> {extraEliminar.categoria}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
+                    <span className="font-medium">Monto:</span> {formatearDinero(extraEliminar.monto)}
+                  </p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">
+                    <span className="font-medium">Tipo:</span>{' '}
+                    {extraEliminar.detalle === 1 ? (
+                      <span className="text-green-600 dark:text-green-400">Bonificación</span>
+                    ) : (
+                      <span className="text-red-600 dark:text-red-400">Deducción</span>
+                    )}
+                  </p>
+                </div>
+                <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                  Esta acción no se puede deshacer.
+                </p>
+              </div>
+
+              {/* Botones */}
+              <div className="flex space-x-3 p-6 border-t border-gray-200 dark:border-gray-700">
+                <button
+                  onClick={handleEliminar}
+                  className="btn-danger flex-1"
+                >
+                  Eliminar
+                </button>
+                <button
+                  onClick={cerrarModalEliminar}
+                  className="btn-secondary flex-1"
+                >
+                  Cancelar
+                </button>
+              </div>
             </div>
           </div>
         )}

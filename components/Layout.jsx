@@ -29,13 +29,13 @@ export default function Layout({ children }) {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: FiHome },
     { name: 'Planificador', href: '/planificador', icon: FiCalendar },
-    { name: 'Empleados', href: '/empleados', icon: FiUsers },
-    { name: 'Turnos', href: '/turnos', icon: FiClock },
-    { name: 'Vacaciones', href: '/vacaciones', icon: FiCalendar },
     { name: 'Logueos', href: '/logueos', icon: FiClock },
     { name: 'Control de Horas', href: '/control-horas', icon: FiClock },
-    { name: 'Pagos Extras', href: '/pagos-extras', icon: FiDollarSign },
     { name: 'Recibos', href: '/recibos', icon: FiDollarSign },
+    { name: 'Pagos Extras', href: '/pagos-extras', icon: FiDollarSign },
+    { name: 'Vacaciones', href: '/vacaciones', icon: FiCalendar },
+    { name: 'Empleados', href: '/empleados', icon: FiUsers },
+    { name: 'Turnos', href: '/turnos', icon: FiClock },
     { name: 'Feriados', href: '/feriados', icon: FiStar },
   ];
 

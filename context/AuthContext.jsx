@@ -11,22 +11,32 @@ export function AuthProvider({ children }) {
 
   // Cargar usuario desde localStorage al montar
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    const userData = localStorage.getItem('user');
+    const loadUser = () => {
+      const token = localStorage.getItem('token');
+      const userData = localStorage.getItem('user');
 
-    if (token && userData) {
-      try {
-        setUser(JSON.parse(userData));
-        // Configurar token en axios
-        apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      } catch (error) {
-        console.error('Error al parsear datos de usuario:', error);
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
+      if (token && userData) {
+        try {
+          // Configurar token en axios
+          apiClient.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+          
+          // Cargar usuario desde localStorage (sin validar con backend para evitar redirecciones innecesarias)
+          const parsedUser = JSON.parse(userData);
+          setUser(parsedUser);
+        } catch (error) {
+          console.error('Error al parsear datos de usuario:', error);
+          localStorage.removeItem('token');
+          localStorage.removeItem('refreshToken');
+          localStorage.removeItem('user');
+          delete apiClient.defaults.headers.common['Authorization'];
+          setUser(null);
+        }
       }
-    }
 
-    setLoading(false);
+      setLoading(false);
+    };
+
+    loadUser();
   }, []);
 
   // Login

@@ -1,24 +1,24 @@
 // pages/index.jsx - Página principal
 import { useEffect } from 'react';
 import { useRouter } from 'next/router';
-import { useAuth } from '../context/AuthContext';
 import Head from 'next/head';
 
 export default function Home() {
   const router = useRouter();
-  const { user, loading } = useAuth();
 
   useEffect(() => {
-    if (!loading) {
-      if (user) {
-        // Si está autenticado, redirigir al dashboard
-        router.push('/dashboard');
-      } else {
-        // Si no está autenticado, redirigir al login
-        router.push('/login');
-      }
+    // Verificar si hay token en localStorage
+    const token = localStorage.getItem('token');
+    const user = localStorage.getItem('user');
+
+    if (token && user) {
+      // Si hay token y usuario, redirigir al dashboard
+      router.replace('/dashboard');
+    } else {
+      // Si no hay token, redirigir al login
+      router.replace('/login');
     }
-  }, [user, loading, router]);
+  }, [router]);
 
   return (
     <>

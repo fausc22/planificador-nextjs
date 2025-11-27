@@ -116,11 +116,11 @@ export default function ControlHoras() {
       <Layout>
         <div className="container-custom py-8">
           {/* Header */}
-          <div className="mb-6">
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+          <div className="mb-4 sm:mb-6">
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
               Control de Horas
             </h1>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
               Registro de fichajes y horas trabajadas
             </p>
           </div>
@@ -226,7 +226,7 @@ export default function ControlHoras() {
           )}
 
           {/* Tabla de Registros */}
-          <div className="card overflow-x-auto">
+          <div className="card">
             {loading ? (
               <Loading />
             ) : registros.length === 0 ? (
@@ -236,51 +236,104 @@ export default function ControlHoras() {
                 description="No se encontraron registros para el período seleccionado"
               />
             ) : (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Empleado</th>
-                    <th>Ingreso</th>
-                    <th>Egreso</th>
-                    <th>Horas Trabajadas</th>
-                    <th>Acumulado</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <>
+                {/* Vista de escritorio - Tabla */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="table w-full">
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Empleado</th>
+                        <th>Ingreso</th>
+                        <th>Egreso</th>
+                        <th>Horas Trabajadas</th>
+                        <th>Acumulado</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {registros.map((registro) => (
+                        <tr key={registro.id}>
+                          <td>{registro.fecha}</td>
+                          <td>
+                            <div className="flex items-center space-x-2">
+                              <FiUser className="text-gray-400" />
+                              <span>{registro.nombre_empleado}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="badge badge-success">
+                              {registro.hora_ingreso}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="badge badge-danger">
+                              {registro.hora_egreso}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="font-medium text-blue-600 dark:text-blue-400">
+                              {formatearHoras(registro.horas_trabajadas)}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="font-bold text-green-600 dark:text-green-400">
+                              {formatearDinero(registro.acumulado)}
+                            </span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Vista móvil - Cards */}
+                <div className="md:hidden space-y-3">
                   {registros.map((registro) => (
-                    <tr key={registro.id}>
-                      <td>{registro.fecha}</td>
-                      <td>
-                        <div className="flex items-center space-x-2">
-                          <FiUser className="text-gray-400" />
-                          <span>{registro.nombre_empleado}</span>
+                    <div key={registro.id} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <FiUser className="text-gray-400" />
+                            <h3 className="font-bold text-gray-900 dark:text-white">
+                              {registro.nombre_empleado}
+                            </h3>
+                          </div>
+                          <div className="space-y-2 text-sm">
+                            <div className="flex items-center space-x-2">
+                              <FiCalendar className="text-gray-400" />
+                              <span className="text-gray-600 dark:text-gray-400">{registro.fecha}</span>
+                            </div>
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <span className="text-gray-600 dark:text-gray-400 text-xs">Ingreso:</span>
+                                <span className="badge badge-success ml-1 text-xs">{registro.hora_ingreso}</span>
+                              </div>
+                              <div>
+                                <span className="text-gray-600 dark:text-gray-400 text-xs">Egreso:</span>
+                                <span className="badge badge-danger ml-1 text-xs">{registro.hora_egreso}</span>
+                              </div>
+                            </div>
+                            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                              <div className="flex items-center justify-between">
+                                <span className="text-gray-600 dark:text-gray-400 text-xs">Horas:</span>
+                                <span className="font-medium text-blue-600 dark:text-blue-400">
+                                  {formatearHoras(registro.horas_trabajadas)}
+                                </span>
+                              </div>
+                              <div className="flex items-center justify-between mt-1">
+                                <span className="text-gray-600 dark:text-gray-400 text-xs">Total:</span>
+                                <span className="font-bold text-green-600 dark:text-green-400">
+                                  {formatearDinero(registro.acumulado)}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                      </td>
-                      <td>
-                        <span className="badge badge-success">
-                          {registro.hora_ingreso}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="badge badge-danger">
-                          {registro.hora_egreso}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="font-medium text-blue-600 dark:text-blue-400">
-                          {formatearHoras(registro.horas_trabajadas)}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="font-bold text-green-600 dark:text-green-400">
-                          {formatearDinero(registro.acumulado)}
-                        </span>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
         </div>

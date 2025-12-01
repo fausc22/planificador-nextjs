@@ -3,17 +3,24 @@ import { useState, useRef, useEffect } from 'react';
 import Head from 'next/head';
 import { FiMail, FiCheckCircle, FiUser, FiClock, FiLogIn, FiLogOut, FiCamera, FiX, FiLock, FiAlertCircle } from 'react-icons/fi';
 import { apiClient } from '../utils/api';
+import axios from 'axios';
 import toast from 'react-hot-toast';
 
+// URL directa del VPS para evitar problemas con Vercel
+const VPS_API_URL = process.env.NEXT_PUBLIC_API_URL;
+
 export default function Asistencia() {
-  const [paso, setPaso] = useState(1); // 1: Email, 2: Contraseña, 3: Cámara, 4: Éxito
+  const [paso, setPaso] = useState(1); // 1: Email, 2: Acción y Contraseña, 3: Cámara, 4: Éxito
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [accion, setAccion] = useState('INGRESO');
   const [empleado, setEmpleado] = useState(null);
   const [loading, setLoading] = useState(false);
   const [validandoAccion, setValidandoAccion] = useState(false);
-  const [accionPermitida, setAccionPermitida] = useState(null);
+  const [validandoPassword, setValidandoPassword] = useState(false);
+  const [accionValidada, setAccionValidada] = useState(false);
+  const [passwordValidada, setPasswordValidada] = useState(false);
+  const [ultimaAccion, setUltimaAccion] = useState(null);
   
   // Estados para la cámara
   const [stream, setStream] = useState(null);
@@ -42,6 +49,15 @@ export default function Asistencia() {
       detenerCamara();
     }
   }, [paso]);
+
+  // Verificar acción automáticamente cuando se llega al paso 2 y hay un empleado
+  useEffect(() => {
+    if (paso === 2 && empleado && !accionValidada && !validandoAccion && accion) {
+      // Verificar la acción inicial automáticamente
+      verificarAccion();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }
+  }, [paso, empleado?.nombreCompleto]);
 
   const iniciarCamara = async () => {
     try {
@@ -91,7 +107,11 @@ export default function Asistencia() {
       
       if (response.data.success) {
         setEmpleado(response.data.empleado);
-        setPaso(2); // Ir a paso de contraseña
+        setPaso(2); // Ir a paso de acción y contraseña
+        setAccion('INGRESO'); // Resetear acción
+        setAccionValidada(false);
+        setPasswordValidada(false);
+        setUltimaAccion(null);
         toast.success('¡Empleado encontrado!');
       }
     } catch (error) {
@@ -103,8 +123,71 @@ export default function Asistencia() {
     }
   };
 
-  // Verificar acción permitida antes de ir a cámara
-  const verificarAccionPermitida = async (e) => {
+  // Verificar acción cuando el usuario la selecciona (automático y silencioso)
+  const verificarAccion = async () => {
+    if (!empleado) {
+      return;
+    }
+
+    setValidandoAccion(true);
+    setAccionValidada(false);
+
+    try {
+      // Verificar última acción del empleado
+      const response = await apiClient.post('/marcaciones/verificar-accion', {
+        nombreEmpleado: empleado.nombreCompleto
+      });
+
+      if (response.data.success) {
+        const debeRegistrar = response.data.debeRegistrar;
+        const ultimaAccionRegistrada = response.data.ultimaAccion;
+        setUltimaAccion(ultimaAccionRegistrada);
+        
+        // Verificar si la acción seleccionada es correcta
+        if (accion !== debeRegistrar) {
+          // La acción no es correcta, cambiar automáticamente y mostrar error
+          if (!ultimaAccionRegistrada) {
+            // Es el primer registro del día, solo permite INGRESO
+            if (accion === 'EGRESO') {
+              toast.error('No puedes registrar un EGRESO sin un INGRESO previo. Se cambió a INGRESO.', {
+                duration: 5000
+              });
+              setAccion('INGRESO');
+              setAccionValidada(true); // Ahora es correcta
+            }
+          } else if (ultimaAccionRegistrada === 'INGRESO' && accion === 'INGRESO') {
+            // Ya hay un INGRESO, debe registrar EGRESO
+            toast.error('Ya tienes un INGRESO registrado. Se cambió a EGRESO.', {
+              duration: 5000
+            });
+            setAccion('EGRESO');
+            setAccionValidada(true); // Ahora es correcta
+          } else if (ultimaAccionRegistrada === 'EGRESO' && accion === 'EGRESO') {
+            // Ya hay un EGRESO, debe registrar INGRESO
+            toast.error('Tu último registro fue un EGRESO. Se cambió a INGRESO.', {
+              duration: 5000
+            });
+            setAccion('INGRESO');
+            setAccionValidada(true); // Ahora es correcta
+          } else {
+            setAccionValidada(false);
+          }
+        } else {
+          // La acción es correcta
+          setAccionValidada(true);
+        }
+      }
+    } catch (error) {
+      console.error('Error verificando acción:', error);
+      toast.error('Error al verificar acción. Por favor, intenta nuevamente.');
+      setAccionValidada(false);
+    } finally {
+      setValidandoAccion(false);
+    }
+  };
+
+  // Validar contraseña antes de ir a cámara
+  const validarPassword = async (e) => {
     e.preventDefault();
     
     if (!password) {
@@ -112,38 +195,38 @@ export default function Asistencia() {
       return;
     }
 
-    if (!empleado) {
-      toast.error('Empleado no encontrado');
+    if (!accionValidada) {
+      toast.error('La acción seleccionada no es correcta. Por favor, selecciona la acción correcta.');
       return;
     }
 
-    setValidandoAccion(true);
+    setValidandoPassword(true);
 
     try {
-      // Verificar última acción del empleado usando endpoint público
-      const response = await apiClient.post('/marcaciones/verificar-accion', {
-        nombreEmpleado: empleado.nombreCompleto
+      // Validar contraseña en el backend
+      const response = await apiClient.post('/marcaciones/validar-password', {
+        password
       });
 
       if (response.data.success) {
-        const debeRegistrar = response.data.debeRegistrar;
-        const ultimaAccion = response.data.ultimaAccion;
-        
-        // Si la acción seleccionada no coincide con la que debe registrar, actualizarla automáticamente
-        if (accion !== debeRegistrar) {
-          setAccion(debeRegistrar);
-          toast.info(`Se actualizó a ${debeRegistrar}. ${ultimaAccion ? `Tu último registro fue ${ultimaAccion}` : 'Es tu primer registro del día'}`);
-        }
-        
-        // Si todo está bien, continuar a cámara
-        setAccionPermitida(debeRegistrar);
-        setPaso(3); // Ir a paso de cámara
+        // Contraseña correcta, permitir continuar
+        setPasswordValidada(true);
+        setPaso(3); // Ir a cámara
+      } else {
+        toast.error('Contraseña incorrecta. Por favor, verifica tu contraseña.');
+        setPasswordValidada(false);
       }
     } catch (error) {
-      console.error('Error verificando acción:', error);
-      toast.error(error.response?.data?.message || 'Error al verificar acción permitida');
+      console.error('Error validando contraseña:', error);
+      
+      if (error.response?.status === 403) {
+        toast.error('Contraseña incorrecta. Por favor, verifica tu contraseña.');
+      } else {
+        toast.error('Error al validar contraseña. Por favor, intenta nuevamente.');
+      }
+      setPasswordValidada(false);
     } finally {
-      setValidandoAccion(false);
+      setValidandoPassword(false);
     }
   };
 
@@ -202,18 +285,24 @@ export default function Asistencia() {
       formData.append('accion', accion);
       formData.append('foto', blob, 'foto.jpg');
 
-      console.log('📤 Enviando marcación con foto...', {
+      console.log('📤 Enviando marcación con foto directamente al VPS...', {
         email,
         accion,
-        fotoSize: `${(blob.size / 1024).toFixed(2)}KB`
+        fotoSize: `${(blob.size / 1024).toFixed(2)}KB`,
+        vpsUrl: `${VPS_API_URL}/marcaciones/registrar-con-foto`
       });
 
-      const apiResponse = await apiClient.post('/marcaciones/registrar-con-foto', formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data'
-        },
-        timeout: 60000 // 60 segundos (reducido, debería ser suficiente)
-      });
+      // Llamar directamente al VPS sin pasar por Vercel/Next.js API routes
+      const apiResponse = await axios.post(
+        `${VPS_API_URL}/marcaciones/registrar-con-foto`, 
+        formData, 
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          },
+          timeout: 120000 // 120 segundos para subida de fotos
+        }
+      );
 
       console.log('✅ Respuesta recibida:', apiResponse.data);
 
@@ -228,20 +317,47 @@ export default function Asistencia() {
       
       // Manejar diferentes tipos de errores
       let errorMessage = 'Error al registrar marcación';
+      let isValidationError = false;
       
       if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
         errorMessage = 'La petición tardó demasiado. Por favor, intenta nuevamente.';
       } else if (error.response?.status === 502) {
         errorMessage = 'Error de conexión con el servidor. Por favor, intenta nuevamente.';
       } else if (error.response?.status === 400) {
-        errorMessage = error.response?.data?.message || 'Datos inválidos. Verifica la información.';
+        // Errores de validación (400) son informativos, no errores del sistema
+        const backendMessage = error.response?.data?.message || 'Datos inválidos. Verifica la información.';
+        
+        // Detectar si es un error de validación de negocio (no un error técnico)
+        if (backendMessage.includes('Ya existe un INGRESO sin EGRESO') || 
+            backendMessage.includes('No existe un INGRESO previo') ||
+            backendMessage.includes('Debe registrar primero')) {
+          isValidationError = true;
+          errorMessage = backendMessage;
+        } else {
+          errorMessage = backendMessage;
+        }
+      } else if (error.response?.status === 403) {
+        // Error de contraseña incorrecta
+        errorMessage = 'Contraseña incorrecta. Por favor, verifica tu contraseña.';
+        // Volver al paso 2 para que pueda corregir la contraseña
+        setPaso(2);
+        setPassword('');
+        setPasswordValidada(false);
       } else if (error.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error.message) {
         errorMessage = error.message;
       }
       
-      toast.error(errorMessage);
+      // Mostrar como info si es una validación de negocio, como error si es técnico
+      if (isValidationError) {
+        toast(errorMessage, {
+          duration: 5000,
+          icon: 'ℹ️'
+        });
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       // Asegurar que loading siempre se resetee
       setLoading(false);
@@ -257,6 +373,9 @@ export default function Asistencia() {
     setEmpleado(null);
     setFotoCapturada(null);
     setPaso(1);
+    setAccionValidada(false);
+    setPasswordValidada(false);
+    setUltimaAccion(null);
     detenerCamara();
   };
 
@@ -331,7 +450,7 @@ export default function Asistencia() {
               </div>
             )}
 
-            {/* Paso 2: Contraseña y Acción */}
+            {/* Paso 2: Acción y Contraseña */}
             {paso === 2 && empleado && (
               <div className="space-y-6">
                 {/* Información del empleado */}
@@ -360,108 +479,154 @@ export default function Asistencia() {
                   </label>
                   <div className="grid grid-cols-2 gap-3">
                     <button
-                      onClick={() => setAccion('INGRESO')}
+                      type="button"
+                      onClick={() => {
+                        setAccion('INGRESO');
+                        setAccionValidada(false);
+                        // Verificar automáticamente cuando se selecciona
+                        setTimeout(() => verificarAccion(), 100);
+                      }}
+                      disabled={validandoAccion}
                       className={`p-4 rounded-lg border-2 transition-all ${
                         accion === 'INGRESO'
-                          ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
+                          ? accionValidada
+                            ? 'border-green-500 bg-green-50 dark:bg-green-900/30'
+                            : 'border-blue-500 bg-blue-50 dark:bg-blue-900/30'
                           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                       }`}
                     >
                       <FiLogIn className={`mx-auto text-3xl mb-2 ${
-                        accion === 'INGRESO' ? 'text-blue-600 dark:text-blue-400' : 'text-gray-400'
+                        accion === 'INGRESO' 
+                          ? accionValidada
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-blue-600 dark:text-blue-400'
+                          : 'text-gray-400'
                       }`} />
                       <p className={`font-semibold text-sm ${
-                        accion === 'INGRESO' ? 'text-blue-900 dark:text-blue-300' : 'text-gray-600 dark:text-gray-400'
+                        accion === 'INGRESO' 
+                          ? accionValidada
+                            ? 'text-green-900 dark:text-green-300'
+                            : 'text-blue-900 dark:text-blue-300'
+                          : 'text-gray-600 dark:text-gray-400'
                       }`}>
                         INGRESO
                       </p>
+                      {accion === 'INGRESO' && accionValidada && (
+                        <FiCheckCircle className="mx-auto text-green-600 dark:text-green-400 mt-1" />
+                      )}
                     </button>
 
                     <button
-                      onClick={() => setAccion('EGRESO')}
+                      type="button"
+                      onClick={() => {
+                        setAccion('EGRESO');
+                        setAccionValidada(false);
+                        // Verificar automáticamente cuando se selecciona
+                        setTimeout(() => verificarAccion(), 100);
+                      }}
+                      disabled={validandoAccion}
                       className={`p-4 rounded-lg border-2 transition-all ${
                         accion === 'EGRESO'
-                          ? 'border-red-500 bg-red-50 dark:bg-red-900/30'
+                          ? accionValidada
+                            ? 'border-green-500 bg-green-50 dark:bg-green-900/30'
+                            : 'border-red-500 bg-red-50 dark:bg-red-900/30'
                           : 'border-gray-200 dark:border-gray-700 hover:border-gray-300'
                       }`}
                     >
                       <FiLogOut className={`mx-auto text-3xl mb-2 ${
-                        accion === 'EGRESO' ? 'text-red-600 dark:text-red-400' : 'text-gray-400'
+                        accion === 'EGRESO'
+                          ? accionValidada
+                            ? 'text-green-600 dark:text-green-400'
+                            : 'text-red-600 dark:text-red-400'
+                          : 'text-gray-400'
                       }`} />
                       <p className={`font-semibold text-sm ${
-                        accion === 'EGRESO' ? 'text-red-900 dark:text-red-300' : 'text-gray-600 dark:text-gray-400'
+                        accion === 'EGRESO'
+                          ? accionValidada
+                            ? 'text-green-900 dark:text-green-300'
+                            : 'text-red-900 dark:text-red-300'
+                          : 'text-gray-600 dark:text-gray-400'
                       }`}>
                         EGRESO
                       </p>
+                      {accion === 'EGRESO' && accionValidada && (
+                        <FiCheckCircle className="mx-auto text-green-600 dark:text-green-400 mt-1" />
+                      )}
                     </button>
                   </div>
+                  
                 </div>
 
-                {/* Contraseña */}
-                <form onSubmit={verificarAccionPermitida} className="space-y-4">
-                  <div>
-                    <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Contraseña de asistencia
-                    </label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <FiLock className="text-gray-400" />
+                {/* Contraseña - Solo mostrar si la acción está validada */}
+                {accionValidada && (
+                  <form onSubmit={validarPassword} className="space-y-4">
+                    <div>
+                      <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                        Contraseña de asistencia
+                      </label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                          <FiLock className="text-gray-400" />
+                        </div>
+                        <input
+                          id="password"
+                          name="password"
+                          type={mostrarContrasena ? "text" : "password"}
+                          required
+                          value={password}
+                          onChange={(e) => setPassword(e.target.value)}
+                          className="input pl-10 pr-10"
+                          placeholder="Ingresa la contraseña"
+                          disabled={validandoPassword}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setMostrarContrasena(!mostrarContrasena)}
+                          className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                        >
+                          {mostrarContrasena ? (
+                            <FiX className="text-gray-400 hover:text-gray-600" />
+                          ) : (
+                            <FiLock className="text-gray-400 hover:text-gray-600" />
+                          )}
+                        </button>
                       </div>
-                      <input
-                        id="password"
-                        name="password"
-                        type={mostrarContrasena ? "text" : "password"}
-                        required
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        className="input pl-10 pr-10"
-                        placeholder="Ingresa la contraseña"
-                        disabled={loading}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => setMostrarContrasena(!mostrarContrasena)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                      >
-                        {mostrarContrasena ? (
-                          <FiX className="text-gray-400 hover:text-gray-600" />
-                        ) : (
-                          <FiLock className="text-gray-400 hover:text-gray-600" />
-                        )}
-                      </button>
                     </div>
-                  </div>
 
-                  <button
-                    type="submit"
-                    disabled={loading || validandoAccion}
-                    className="w-full btn-primary flex items-center justify-center space-x-2"
-                  >
-                    {validandoAccion ? (
-                      <>
-                        <div className="spinner w-5 h-5 border-2"></div>
-                        <span>Validando...</span>
-                      </>
-                    ) : (
-                      <>
-                        <FiCamera />
-                        <span>GENERAR REGISTRO</span>
-                      </>
-                    )}
-                  </button>
+                    <button
+                      type="submit"
+                      disabled={validandoPassword}
+                      className="w-full btn-primary flex items-center justify-center space-x-2"
+                    >
+                      {validandoPassword ? (
+                        <>
+                          <div className="spinner w-5 h-5 border-2"></div>
+                          <span>Validando...</span>
+                        </>
+                      ) : (
+                        <>
+                          <FiCamera />
+                          <span>Continuar a Cámara</span>
+                        </>
+                      )}
+                    </button>
+                  </form>
+                )}
 
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setPaso(1);
-                      setPassword('');
-                    }}
-                    disabled={loading}
-                    className="w-full btn-secondary"
-                  >
-                    Cambiar empleado
-                  </button>
-                </form>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setPaso(1);
+                    setPassword('');
+                    setAccion('INGRESO');
+                    setAccionValidada(false);
+                    setPasswordValidada(false);
+                  }}
+                  disabled={loading || validandoAccion || validandoPassword}
+                  className="w-full btn-secondary"
+                >
+                  Cambiar empleado
+                </button>
               </div>
             )}
 

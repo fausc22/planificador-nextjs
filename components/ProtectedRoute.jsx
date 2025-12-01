@@ -2,18 +2,20 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
+import { hasValidToken, isTokenExpired, clearAuthData } from '../utils/tokenUtils';
+import { apiClient } from '../utils/api';
 
 // Rutas públicas que no requieren autenticación
 const PUBLIC_ROUTES = ['/asistencia', '/login', '/marcar-asistencia'];
 
 export default function ProtectedRoute({ children }) {
   const router = useRouter();
-  const { loading } = useAuth();
+  const { loading, refreshAccessToken } = useAuth();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    const checkAuth = () => {
+    const checkAuth = async () => {
       // Si la ruta es pública, permitir acceso
       if (PUBLIC_ROUTES.includes(router.pathname)) {
         setIsAuthorized(true);
@@ -23,15 +25,44 @@ export default function ProtectedRoute({ children }) {
 
       // Verificar token en localStorage
       const token = localStorage.getItem('token');
+      const refreshToken = localStorage.getItem('refreshToken');
       
       if (!token) {
         // No hay token, redirigir a login
+        clearAuthData();
         router.replace('/login');
         setIsChecking(false);
         return;
       }
 
-      // Hay token, permitir acceso
+      // Verificar si el token está expirado
+      if (isTokenExpired(token)) {
+        // Token expirado, intentar refrescar
+        if (refreshToken) {
+          try {
+            await refreshAccessToken();
+            // Token refrescado exitosamente
+            setIsAuthorized(true);
+            setIsChecking(false);
+            return;
+          } catch (error) {
+            // Refresh falló, limpiar y redirigir
+            console.error('Error refrescando token:', error);
+            clearAuthData();
+            router.replace('/login');
+            setIsChecking(false);
+            return;
+          }
+        } else {
+          // No hay refresh token, limpiar y redirigir
+          clearAuthData();
+          router.replace('/login');
+          setIsChecking(false);
+          return;
+        }
+      }
+
+      // Token válido, permitir acceso
       setIsAuthorized(true);
       setIsChecking(false);
     };
@@ -40,7 +71,7 @@ export default function ProtectedRoute({ children }) {
     if (router.isReady && !loading) {
       checkAuth();
     }
-  }, [router.pathname, router.isReady, loading]);
+  }, [router.pathname, router.isReady, loading, refreshAccessToken]);
 
   // Mostrar loading mientras se verifica
   if (isChecking || loading) {

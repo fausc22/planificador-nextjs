@@ -7,16 +7,17 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    // Verificar si hay token en localStorage
-    const token = localStorage.getItem('token');
-    const user = localStorage.getItem('user');
-
-    if (token && user) {
-      // Si hay token y usuario, redirigir al dashboard
-      router.replace('/dashboard');
-    } else {
-      // Si no hay token, redirigir al login
-      router.replace('/login');
+    if (router.isReady) {
+      // Importar dinámicamente para evitar problemas de SSR
+      import('../utils/tokenUtils').then(({ hasValidToken }) => {
+        if (hasValidToken()) {
+          // Si hay token válido, redirigir al dashboard
+          router.replace('/dashboard');
+        } else {
+          // Si no hay token válido, redirigir al login
+          router.replace('/login');
+        }
+      });
     }
   }, [router]);
 

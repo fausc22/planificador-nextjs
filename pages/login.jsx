@@ -10,11 +10,13 @@ export default function Login() {
   const router = useRouter();
   const { login, loading } = useAuth();
 
-  // Si ya hay token, redirigir al dashboard
+  // Si ya hay token válido, redirigir al dashboard
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (token && router.isReady) {
-      router.replace('/dashboard');
+    if (router.isReady) {
+      const { hasValidToken } = require('../utils/tokenUtils');
+      if (hasValidToken()) {
+        router.replace('/dashboard');
+      }
     }
   }, [router]);
   

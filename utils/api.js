@@ -1,6 +1,7 @@
 // utils/api.js - Cliente HTTP con Axios
 import axios from 'axios';
 import toast from 'react-hot-toast';
+import { isTokenExpired, clearAuthData } from './tokenUtils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
@@ -13,13 +14,108 @@ export const apiClient = axios.create({
   timeout: 30000, // 30 segundos
 });
 
-// Interceptor de request para agregar token automáticamente
-apiClient.interceptors.request.use(
-  (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+// Variable para evitar múltiples refreshes simultáneos
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach(prom => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
     }
+  });
+  
+  failedQueue = [];
+};
+
+// Interceptor de request para agregar token automáticamente y verificar expiración
+apiClient.interceptors.request.use(
+  async (config) => {
+    // Rutas públicas que no necesitan token
+    const publicRoutes = [
+      '/marcaciones/registrar-con-foto',
+      '/marcaciones/verificar-empleado',
+      '/marcaciones/verificar-accion',
+      '/marcaciones/registrar',
+      '/marcaciones/generar-qr',
+      '/marcaciones/validar-password',
+      '/auth/login',
+      '/auth/refresh-token'
+    ];
+    
+    const isPublicRoute = publicRoutes.some(route => config.url?.includes(route));
+    
+    if (!isPublicRoute) {
+      const token = localStorage.getItem('token');
+      
+      if (token) {
+        // Verificar si el token está expirado antes de hacer la petición
+        if (isTokenExpired(token)) {
+          // Token expirado, intentar refrescar
+          const refreshToken = localStorage.getItem('refreshToken');
+          
+          if (refreshToken && !isRefreshing) {
+            isRefreshing = true;
+            
+            try {
+              const response = await axios.post(`${API_URL}/auth/refresh-token`, {
+                refreshToken
+              });
+              
+              const { accessToken } = response.data;
+              localStorage.setItem('token', accessToken);
+              config.headers.Authorization = `Bearer ${accessToken}`;
+              apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
+              
+              processQueue(null, accessToken);
+              isRefreshing = false;
+              
+              return config;
+            } catch (refreshError) {
+              // Refresh falló, limpiar y redirigir
+              clearAuthData();
+              processQueue(refreshError, null);
+              isRefreshing = false;
+              
+              if (typeof window !== 'undefined') {
+                window.location.href = '/login';
+              }
+              
+              return Promise.reject(refreshError);
+            }
+          } else if (isRefreshing) {
+            // Ya hay un refresh en proceso, esperar
+            return new Promise((resolve, reject) => {
+              failedQueue.push({ resolve, reject });
+            }).then(token => {
+              config.headers.Authorization = `Bearer ${token}`;
+              return config;
+            }).catch(err => {
+              return Promise.reject(err);
+            });
+          } else {
+            // No hay refresh token, limpiar y redirigir
+            clearAuthData();
+            if (typeof window !== 'undefined') {
+              window.location.href = '/login';
+            }
+            return Promise.reject(new Error('Token expirado y no hay refresh token'));
+          }
+        } else {
+          // Token válido, agregar al header
+          config.headers.Authorization = `Bearer ${token}`;
+        }
+      } else {
+        // No hay token, redirigir a login
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
+        return Promise.reject(new Error('No hay token de autenticación'));
+      }
+    }
+    
     return config;
   },
   (error) => {
@@ -50,6 +146,21 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry && !isPublicRoute) {
       originalRequest._retry = true;
 
+      // Si ya estamos refrescando, esperar a que termine
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ 
+            resolve: (token) => {
+              originalRequest.headers.Authorization = `Bearer ${token}`;
+              resolve(apiClient(originalRequest));
+            }, 
+            reject 
+          });
+        });
+      }
+
+      isRefreshing = true;
+
       try {
         const refreshToken = localStorage.getItem('refreshToken');
         
@@ -64,13 +175,18 @@ apiClient.interceptors.response.use(
           apiClient.defaults.headers.common['Authorization'] = `Bearer ${accessToken}`;
           originalRequest.headers.Authorization = `Bearer ${accessToken}`;
 
+          processQueue(null, accessToken);
+          isRefreshing = false;
+
           return apiClient(originalRequest);
+        } else {
+          throw new Error('No hay refresh token');
         }
       } catch (refreshError) {
         // Si el refresh falla, limpiar y redirigir al login
-        localStorage.removeItem('token');
-        localStorage.removeItem('refreshToken');
-        localStorage.removeItem('user');
+        clearAuthData();
+        processQueue(refreshError, null);
+        isRefreshing = false;
         
         if (typeof window !== 'undefined') {
           window.location.href = '/login';
@@ -80,9 +196,16 @@ apiClient.interceptors.response.use(
       }
     }
 
+    // Si es 401 y no se pudo refrescar, ya se redirigió al login
+    if (error.response?.status === 401 && !isPublicRoute) {
+      // Ya se intentó refrescar y falló, o no hay refresh token
+      // No mostrar error, ya se redirigió
+      return Promise.reject(error);
+    }
+
     // Manejar otros errores
     // NO mostrar toast automático para rutas públicas (dejan que el componente maneje el error)
-    if (!isPublicRoute && error.response?.status !== 401) {
+    if (!isPublicRoute) {
       const errorMessage = error.response?.data?.message || error.message || 'Error en la petición';
       toast.error(errorMessage);
     }

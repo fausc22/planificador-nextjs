@@ -12,11 +12,15 @@ export default function Dashboard() {
   const router = useRouter();
 
   // La protección de ruta se maneja en ProtectedRoute
-  // Este useEffect es redundante pero lo dejamos por si acaso
+  // Este useEffect es una verificación adicional
   useEffect(() => {
-    const token = localStorage.getItem('token');
-    if (!loading && !token && router.isReady) {
-      router.replace('/login');
+    if (!loading && router.isReady) {
+      // Importar dinámicamente para evitar problemas de SSR
+      import('../utils/tokenUtils').then(({ hasValidToken }) => {
+        if (!hasValidToken()) {
+          router.replace('/login');
+        }
+      });
     }
   }, [loading, router]);
 

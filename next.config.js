@@ -1,30 +1,24 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  
-  // Variables de entorno públicas
+
+  api: {
+    bodyParser: false, // ⬅️ LO QUE FALTABA
+  },
+
   env: {
     API_URL: process.env.NEXT_PUBLIC_API_URL,
   },
 
-  // Configuración de imágenes
   images: {
     domains: ['localhost'],
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: '**',
-      },
-      {
-        protocol: 'http',
-        hostname: 'localhost',
-      },
+      { protocol: 'https', hostname: '**' },
+      { protocol: 'http', hostname: 'localhost' },
     ],
     formats: ['image/avif', 'image/webp'],
   },
 
-  // Configuración de headers para CORS
   async headers() {
     return [
       {
@@ -41,4 +35,3 @@ const nextConfig = {
 };
 
 module.exports = nextConfig;
-

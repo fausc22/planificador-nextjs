@@ -190,6 +190,9 @@ export default function Asistencia() {
     try {
       // Convertir base64 a blob
       const response = await fetch(fotoCapturada);
+      if (!response.ok) {
+        throw new Error('Error al procesar la foto');
+      }
       const blob = await response.blob();
       
       // Crear FormData
@@ -199,22 +202,50 @@ export default function Asistencia() {
       formData.append('accion', accion);
       formData.append('foto', blob, 'foto.jpg');
 
+      console.log('📤 Enviando marcación con foto...', {
+        email,
+        accion,
+        fotoSize: `${(blob.size / 1024).toFixed(2)}KB`
+      });
+
       const apiResponse = await apiClient.post('/marcaciones/registrar-con-foto', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
         },
-        timeout: 120000 // 120 segundos (2 minutos) para subida de fotos
+        timeout: 60000 // 60 segundos (reducido, debería ser suficiente)
       });
+
+      console.log('✅ Respuesta recibida:', apiResponse.data);
 
       if (apiResponse.data.success) {
         setPaso(4); // Éxito
         toast.success(`${accion} registrado exitosamente`);
+      } else {
+        throw new Error(apiResponse.data.message || 'Error desconocido');
       }
     } catch (error) {
-      console.error('Error registrando marcación:', error);
-      toast.error(error.response?.data?.message || 'Error al registrar marcación');
+      console.error('❌ Error registrando marcación:', error);
+      
+      // Manejar diferentes tipos de errores
+      let errorMessage = 'Error al registrar marcación';
+      
+      if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+        errorMessage = 'La petición tardó demasiado. Por favor, intenta nuevamente.';
+      } else if (error.response?.status === 502) {
+        errorMessage = 'Error de conexión con el servidor. Por favor, intenta nuevamente.';
+      } else if (error.response?.status === 400) {
+        errorMessage = error.response?.data?.message || 'Datos inválidos. Verifica la información.';
+      } else if (error.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      toast.error(errorMessage);
     } finally {
+      // Asegurar que loading siempre se resetee
       setLoading(false);
+      console.log('🔄 Loading reseteado');
     }
   };
 

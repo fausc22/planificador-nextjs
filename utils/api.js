@@ -34,9 +34,20 @@ apiClient.interceptors.response.use(
   },
   async (error) => {
     const originalRequest = error.config;
+    
+    // Rutas públicas que manejan sus propios errores (no mostrar toast automático)
+    const publicRoutes = [
+      '/marcaciones/registrar-con-foto',
+      '/marcaciones/verificar-empleado',
+      '/marcaciones/verificar-accion',
+      '/marcaciones/registrar',
+      '/marcaciones/generar-qr'
+    ];
+    
+    const isPublicRoute = publicRoutes.some(route => originalRequest?.url?.includes(route));
 
     // Si el error es 401 y no es un retry, intentar refresh token
-    if (error.response?.status === 401 && !originalRequest._retry) {
+    if (error.response?.status === 401 && !originalRequest._retry && !isPublicRoute) {
       originalRequest._retry = true;
 
       try {
@@ -70,10 +81,9 @@ apiClient.interceptors.response.use(
     }
 
     // Manejar otros errores
-    const errorMessage = error.response?.data?.message || error.message || 'Error en la petición';
-    
-    // Mostrar toast solo si no es un 401 (ya se maneja con redirect)
-    if (error.response?.status !== 401) {
+    // NO mostrar toast automático para rutas públicas (dejan que el componente maneje el error)
+    if (!isPublicRoute && error.response?.status !== 401) {
+      const errorMessage = error.response?.data?.message || error.message || 'Error en la petición';
       toast.error(errorMessage);
     }
 

@@ -285,16 +285,16 @@ export default function Asistencia() {
       formData.append('accion', accion);
       formData.append('foto', blob, 'foto.jpg');
 
-      console.log('📤 Enviando marcación con foto directamente al VPS...', {
+      console.log('📤 Enviando marcación con foto a través de API route proxy...', {
         email,
         accion,
-        fotoSize: `${(blob.size / 1024).toFixed(2)}KB`,
-        vpsUrl: `${VPS_API_URL}/marcaciones/registrar-con-foto`
+        fotoSize: `${(blob.size / 1024).toFixed(2)}KB`
       });
 
-      // Llamar directamente al VPS sin pasar por Vercel/Next.js API routes
+      // Llamar a la API route de Next.js que actúa como proxy al VPS
+      // Esto evita problemas de timeout de Vercel
       const apiResponse = await axios.post(
-        `${VPS_API_URL}/marcaciones/registrar-con-foto`, 
+        '/api/marcaciones/registrar-con-foto', 
         formData, 
         {
           headers: {

@@ -4,7 +4,7 @@ import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
 
 // Rutas públicas que no requieren autenticación
-const PUBLIC_ROUTES = ['/logueo', '/login', '/marcar-asistencia'];
+const PUBLIC_ROUTES = ['/asistencia', '/login', '/marcar-asistencia'];
 
 export default function ProtectedRoute({ children }) {
   const router = useRouter();

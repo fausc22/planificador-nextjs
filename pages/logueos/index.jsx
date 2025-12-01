@@ -285,7 +285,7 @@ export default function Logueos() {
   return (
     <>
       <Head>
-        <title>Logueos - Planificador</title>
+        <title>Asistencia - Planificador</title>
       </Head>
 
       <Layout>
@@ -294,7 +294,7 @@ export default function Logueos() {
           <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                Logueos
+                Asistencia
               </h1>
               <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
                 Registro de ingresos y egresos de empleados

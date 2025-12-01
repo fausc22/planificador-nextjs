@@ -116,7 +116,7 @@ export default function NotificacionesLogueos() {
           </div>
           <div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-              Notificaciones de Logueos
+              Notificaciones de Asistencia
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               {notificaciones.total} {notificaciones.total === 1 ? 'notificación' : 'notificaciones'}

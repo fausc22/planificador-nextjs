@@ -1,11 +1,11 @@
-// pages/logueo.jsx - Página pública para registro de logueo con foto facial
+// pages/asistencia.jsx - Página pública para registro de asistencia con foto facial
 import { useState, useRef, useEffect } from 'react';
 import Head from 'next/head';
 import { FiMail, FiCheckCircle, FiUser, FiClock, FiLogIn, FiLogOut, FiCamera, FiX, FiLock, FiAlertCircle } from 'react-icons/fi';
 import { apiClient } from '../utils/api';
 import toast from 'react-hot-toast';
 
-export default function Logueo() {
+export default function Asistencia() {
   const [paso, setPaso] = useState(1); // 1: Email, 2: Contraseña, 3: Cámara, 4: Éxito
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -369,7 +369,7 @@ export default function Logueo() {
                 <form onSubmit={verificarAccionPermitida} className="space-y-4">
                   <div>
                     <label htmlFor="password" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      Contraseña de logueo
+                      Contraseña de asistencia
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -570,7 +570,7 @@ export default function Logueo() {
                   onClick={reiniciar}
                   className="w-full btn-primary"
                 >
-                  Registrar otro logueo
+                  Registrar otra asistencia
                 </button>
               </div>
             )}
@@ -585,3 +585,4 @@ export default function Logueo() {
     </>
   );
 }
+

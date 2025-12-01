@@ -22,7 +22,7 @@ export default function MarcarAsistencia() {
     if (!token && router.isReady) {
       toast.error('No se proporcionó un código válido');
       setTimeout(() => {
-        router.push('/logueo');
+        router.push('/asistencia');
       }, 2000);
     }
   }, [token, router]);
@@ -94,7 +94,7 @@ export default function MarcarAsistencia() {
             // Si el token expiró, redirigir después de unos segundos
             if (error.response?.status === 401) {
               setTimeout(() => {
-                router.push('/logueo');
+                router.push('/asistencia');
               }, 3000);
             }
           }
@@ -132,7 +132,7 @@ export default function MarcarAsistencia() {
 
   // Volver al inicio
   const volverAlInicio = () => {
-    router.push('/logueo');
+    router.push('/asistencia');
   };
 
   return (

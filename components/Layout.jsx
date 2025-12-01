@@ -29,7 +29,7 @@ export default function Layout({ children }) {
   const navigation = [
     { name: 'Dashboard', href: '/dashboard', icon: FiHome },
     { name: 'Planificador', href: '/planificador', icon: FiCalendar },
-    { name: 'Logueos', href: '/logueos', icon: FiClock },
+    { name: 'Asistencia', href: '/logueos', icon: FiClock },
     { name: 'Control de Horas', href: '/control-horas', icon: FiClock },
     { name: 'Recibos', href: '/recibos', icon: FiDollarSign },
     { name: 'Pagos Extras', href: '/pagos-extras', icon: FiDollarSign },

@@ -202,7 +202,8 @@ export default function Asistencia() {
       const apiResponse = await apiClient.post('/marcaciones/registrar-con-foto', formData, {
         headers: {
           'Content-Type': 'multipart/form-data'
-        }
+        },
+        timeout: 120000 // 120 segundos (2 minutos) para subida de fotos
       });
 
       if (apiResponse.data.success) {

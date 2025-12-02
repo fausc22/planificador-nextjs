@@ -70,7 +70,9 @@ export default function Empleados() {
         horas_vacaciones: empleado.horas_vacaciones || 0
       });
       if (empleado.foto_perfil_url) {
-        setFotoPreview(`${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}${empleado.foto_perfil_url}`);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/planificador';
+      const baseUrl = apiUrl.replace(/\/planificador$/, '');
+      setFotoPreview(`${baseUrl}${empleado.foto_perfil_url}`);
       }
     } else {
       setEmpleadoEditando(null);
@@ -216,7 +218,11 @@ export default function Empleados() {
 
   const getFotoUrl = (empleado) => {
     if (empleado.foto_perfil_url) {
-      return `${process.env.NEXT_PUBLIC_API_URL?.replace('/api', '')}${empleado.foto_perfil_url}`;
+      // NEXT_PUBLIC_API_URL = https://mycarrito.com.ar/api/planificador
+      // Necesitamos: https://mycarrito.com.ar/api/uploads/empleados/foto.jpg
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/planificador';
+      const baseUrl = apiUrl.replace(/\/planificador$/, '');
+      return `${baseUrl}${empleado.foto_perfil_url}`;
     }
     return null;
   };

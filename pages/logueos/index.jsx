@@ -254,9 +254,14 @@ export default function Logueos() {
 
   const abrirModalFoto = (logueo) => {
     if (logueo.foto_logueo) {
-      // Construir URL completa usando la API URL del backend (sin /api)
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:3000';
-      const fotoUrl = `${apiUrl}/uploads/logueos/${logueo.foto_logueo}`;
+      // Construir URL para la foto
+      // NEXT_PUBLIC_API_URL = https://mycarrito.com.ar/api/planificador
+      // Necesitamos: https://mycarrito.com.ar/api/uploads/logueos/foto.jpg
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/planificador';
+      const baseUrl = apiUrl.replace(/\/planificador$/, '');
+      const fotoUrl = `${baseUrl}/uploads/logueos/${logueo.foto_logueo}`;
+      
+      console.log('🖼️ Abriendo foto:', fotoUrl);
       
       setFotoActual({
         url: fotoUrl,

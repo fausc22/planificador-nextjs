@@ -12,10 +12,10 @@ export default function Home() {
       import('../utils/tokenUtils').then(({ hasValidToken }) => {
         if (hasValidToken()) {
           // Si hay token válido, redirigir al dashboard
-          router.replace('/dashboard');
-        } else {
+      router.replace('/dashboard');
+    } else {
           // Si no hay token válido, redirigir al login
-          router.replace('/login');
+      router.replace('/login');
         }
       });
     }

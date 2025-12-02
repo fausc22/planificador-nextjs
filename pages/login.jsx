@@ -15,7 +15,7 @@ export default function Login() {
     if (router.isReady) {
       const { hasValidToken } = require('../utils/tokenUtils');
       if (hasValidToken()) {
-        router.replace('/dashboard');
+      router.replace('/dashboard');
       }
     }
   }, [router]);

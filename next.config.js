@@ -2,35 +2,20 @@ const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
 
-  api: {
-    bodyParser: false, // ⬅️ LO QUE FALTABA
+  // Configuración para build estático (carpeta out/)
+  output: 'export',
+  distDir: 'out',
+  
+  // Desactivar optimización de imágenes para export estático
+  images: {
+    unoptimized: true,
   },
+
+  // Trailing slash para compatibilidad con servidores estáticos
+  trailingSlash: true,
 
   env: {
     API_URL: process.env.NEXT_PUBLIC_API_URL,
-  },
-
-  images: {
-    domains: ['localhost'],
-    remotePatterns: [
-      { protocol: 'https', hostname: '**' },
-      { protocol: 'http', hostname: 'localhost' },
-    ],
-    formats: ['image/avif', 'image/webp'],
-  },
-
-  async headers() {
-    return [
-      {
-        source: '/api/:path*',
-        headers: [
-          { key: 'Access-Control-Allow-Credentials', value: 'true' },
-          { key: 'Access-Control-Allow-Origin', value: '*' },
-          { key: 'Access-Control-Allow-Methods', value: 'GET,DELETE,PATCH,POST,PUT' },
-          { key: 'Access-Control-Allow-Headers', value: 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization' },
-        ],
-      },
-    ];
   },
 };
 

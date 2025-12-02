@@ -48,9 +48,9 @@ apiClient.interceptors.request.use(
     const isPublicRoute = publicRoutes.some(route => config.url?.includes(route));
     
     if (!isPublicRoute) {
-      const token = localStorage.getItem('token');
+    const token = localStorage.getItem('token');
       
-      if (token) {
+    if (token) {
         // Verificar si el token está expirado antes de hacer la petición
         if (isTokenExpired(token)) {
           // Token expirado, intentar refrescar
@@ -105,8 +105,8 @@ apiClient.interceptors.request.use(
           }
         } else {
           // Token válido, agregar al header
-          config.headers.Authorization = `Bearer ${token}`;
-        }
+      config.headers.Authorization = `Bearer ${token}`;
+    }
       } else {
         // No hay token, redirigir a login
         if (typeof window !== 'undefined') {
@@ -206,7 +206,7 @@ apiClient.interceptors.response.use(
     // Manejar otros errores
     // NO mostrar toast automático para rutas públicas (dejan que el componente maneje el error)
     if (!isPublicRoute) {
-      const errorMessage = error.response?.data?.message || error.message || 'Error en la petición';
+    const errorMessage = error.response?.data?.message || error.message || 'Error en la petición';
       toast.error(errorMessage);
     }
 

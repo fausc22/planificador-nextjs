@@ -18,7 +18,7 @@ export default function Dashboard() {
       // Importar dinámicamente para evitar problemas de SSR
       import('../utils/tokenUtils').then(({ hasValidToken }) => {
         if (!hasValidToken()) {
-          router.replace('/login');
+      router.replace('/login');
         }
       });
     }

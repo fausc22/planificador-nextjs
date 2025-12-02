@@ -3,11 +3,7 @@ import { useState, useRef, useEffect } from 'react';
 import Head from 'next/head';
 import { FiMail, FiCheckCircle, FiUser, FiClock, FiLogIn, FiLogOut, FiCamera, FiX, FiLock, FiAlertCircle } from 'react-icons/fi';
 import { apiClient } from '../utils/api';
-import axios from 'axios';
 import toast from 'react-hot-toast';
-
-// URL directa del VPS para evitar problemas con Vercel
-const VPS_API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export default function Asistencia() {
   const [paso, setPaso] = useState(1); // 1: Email, 2: Acción y Contraseña, 3: Cámara, 4: Éxito
@@ -285,22 +281,21 @@ export default function Asistencia() {
       formData.append('accion', accion);
       formData.append('foto', blob, 'foto.jpg');
 
-      console.log('📤 Enviando marcación con foto a través de API route proxy...', {
+      console.log('📤 Enviando marcación con foto...', {
         email,
         accion,
         fotoSize: `${(blob.size / 1024).toFixed(2)}KB`
       });
 
-      // Llamar a la API route de Next.js que actúa como proxy al VPS
-      // Esto evita problemas de timeout de Vercel
-      const apiResponse = await axios.post(
-        '/api/marcaciones/registrar-con-foto', 
+      // Llamar directamente al backend usando apiClient
+      const apiResponse = await apiClient.post(
+        '/marcaciones/registrar-con-foto', 
         formData, 
         {
           headers: {
             'Content-Type': 'multipart/form-data'
           },
-          timeout: 120000 // 120 segundos para subida de fotos
+          timeout: 60000 // 60 segundos
         }
       );
 

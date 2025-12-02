@@ -234,21 +234,34 @@ export default function Asistencia() {
     const canvas = canvasRef.current;
     const context = canvas.getContext('2d');
 
-    // Configurar canvas con las dimensiones del video
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
+    // Reducir dimensiones para optimizar tamaño (máximo 800px de ancho)
+    const maxWidth = 800;
+    const scale = video.videoWidth > maxWidth ? maxWidth / video.videoWidth : 1;
+    
+    canvas.width = video.videoWidth * scale;
+    canvas.height = video.videoHeight * scale;
 
-    // Dibujar el frame actual del video en el canvas
+    console.log('📸 Capturando foto:', {
+      originalWidth: video.videoWidth,
+      originalHeight: video.videoHeight,
+      finalWidth: canvas.width,
+      finalHeight: canvas.height,
+      scale: scale.toFixed(2)
+    });
+
+    // Dibujar el frame actual del video en el canvas (escalado)
     context.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-    // Convertir a blob y luego a base64 para mostrar preview
+    // Convertir a blob con compresión (calidad 0.7 para reducir tamaño)
     canvas.toBlob((blob) => {
+      console.log(`📷 Foto capturada: ${(blob.size / 1024).toFixed(2)}KB`);
+      
       const reader = new FileReader();
       reader.onloadend = () => {
         setFotoCapturada(reader.result);
       };
       reader.readAsDataURL(blob);
-    }, 'image/jpeg', 0.9);
+    }, 'image/jpeg', 0.7); // Calidad 0.7 para reducir tamaño sin perder mucha calidad
 
     // Detener la cámara después de capturar
     detenerCamara();
@@ -264,29 +277,61 @@ export default function Asistencia() {
   const registrarMarcacion = async () => {
     if (!fotoCapturada || !empleado) return;
 
+    const tiempoInicio = Date.now();
+    console.log('🚀 [INICIO] Proceso de registro de marcación');
+    console.log('📊 Estado inicial:', {
+      email,
+      accion,
+      empleado: empleado.nombreCompleto,
+      fotoCapturada: fotoCapturada ? 'Sí' : 'No',
+      timestamp: new Date().toISOString()
+    });
+
     setLoading(true);
 
     try {
-      // Convertir base64 a blob
+      // Paso 1: Convertir base64 a blob
+      console.log('🔄 [PASO 1] Convirtiendo foto base64 a blob...');
+      const t1 = Date.now();
       const response = await fetch(fotoCapturada);
       if (!response.ok) {
         throw new Error('Error al procesar la foto');
       }
       const blob = await response.blob();
+      console.log(`✅ [PASO 1] Blob creado en ${Date.now() - t1}ms - Tamaño: ${(blob.size / 1024).toFixed(2)}KB`);
       
-      // Crear FormData
+      // Verificar tamaño de la imagen
+      const tamañoMB = blob.size / (1024 * 1024);
+      if (tamañoMB > 5) {
+        console.warn(`⚠️ Imagen grande: ${tamañoMB.toFixed(2)}MB (máximo recomendado: 5MB)`);
+        toast('La imagen es grande, puede tardar un poco...', {
+          duration: 3000,
+          icon: '⏳'
+        });
+      }
+      
+      // Paso 2: Crear FormData
+      console.log('🔄 [PASO 2] Creando FormData...');
+      const t2 = Date.now();
       const formData = new FormData();
       formData.append('email', email);
       formData.append('password', password);
       formData.append('accion', accion);
       formData.append('foto', blob, 'foto.jpg');
+      console.log(`✅ [PASO 2] FormData creado en ${Date.now() - t2}ms`);
 
-      console.log('📤 Enviando marcación con foto...', {
+      // Paso 3: Enviar al backend
+      console.log('🔄 [PASO 3] Enviando petición al backend...');
+      console.log('📡 URL:', `${process.env.NEXT_PUBLIC_API_URL}/marcaciones/registrar-con-foto`);
+      console.log('📦 Datos:', {
         email,
         accion,
-        fotoSize: `${(blob.size / 1024).toFixed(2)}KB`
+        fotoSize: `${(blob.size / 1024).toFixed(2)}KB`,
+        fotoType: blob.type
       });
-
+      
+      const t3 = Date.now();
+      
       // Llamar directamente al backend usando apiClient
       const apiResponse = await apiClient.post(
         '/marcaciones/registrar-con-foto', 
@@ -295,20 +340,38 @@ export default function Asistencia() {
           headers: {
             'Content-Type': 'multipart/form-data'
           },
-          timeout: 60000 // 60 segundos
+          timeout: 60000, // 60 segundos
+          onUploadProgress: (progressEvent) => {
+            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            console.log(`📤 Progreso de subida: ${percentCompleted}%`);
+          }
         }
       );
+      
+      const tiempoSubida = Date.now() - t3;
+      console.log(`✅ [PASO 3] Respuesta recibida en ${tiempoSubida}ms`);
+      console.log('📥 Respuesta del servidor:', apiResponse.data);
 
-      console.log('✅ Respuesta recibida:', apiResponse.data);
-
+      // Paso 4: Procesar respuesta
+      console.log('🔄 [PASO 4] Procesando respuesta...');
       if (apiResponse.data.success) {
+        const tiempoTotal = Date.now() - tiempoInicio;
+        console.log(`✅ [FIN] Proceso completado exitosamente en ${tiempoTotal}ms`);
+        console.log('📊 Desglose de tiempos:', {
+          total: `${tiempoTotal}ms`,
+          subida: `${tiempoSubida}ms`,
+          porcentajeSubida: `${((tiempoSubida / tiempoTotal) * 100).toFixed(1)}%`
+        });
+        
         setPaso(4); // Éxito
         toast.success(`${accion} registrado exitosamente`);
       } else {
         throw new Error(apiResponse.data.message || 'Error desconocido');
       }
     } catch (error) {
-      console.error('❌ Error registrando marcación:', error);
+      const tiempoTotal = Date.now() - tiempoInicio;
+      console.error(`❌ [ERROR] Proceso falló después de ${tiempoTotal}ms`);
+      console.error('❌ Error completo:', error);
       
       // Manejar diferentes tipos de errores
       let errorMessage = 'Error al registrar marcación';

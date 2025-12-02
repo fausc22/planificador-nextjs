@@ -320,31 +320,31 @@ export default function Asistencia() {
       formData.append('foto', blob, 'foto.jpg');
       console.log(`✅ [PASO 2] FormData creado en ${Date.now() - t2}ms`);
 
-      // Paso 3: Enviar al backend
-      console.log('🔄 [PASO 3] Enviando petición al backend...');
-      console.log('📡 URL:', `${process.env.NEXT_PUBLIC_API_URL}/marcaciones/registrar-con-foto`);
+      // Paso 3: Enviar al backend con Base64 (más compatible con proxy PHP)
+      console.log('🔄 [PASO 3] Enviando petición al backend (Base64)...');
+      console.log('📡 URL:', `${process.env.NEXT_PUBLIC_API_URL}/marcaciones/registrar-con-foto-base64`);
       console.log('📦 Datos:', {
         email,
         accion,
-        fotoSize: `${(blob.size / 1024).toFixed(2)}KB`,
-        fotoType: blob.type
+        fotoBase64Size: `${(fotoCapturada.length / 1024).toFixed(2)}KB`
       });
       
       const t3 = Date.now();
       
-      // Llamar directamente al backend usando apiClient
+      // Enviar como JSON con Base64 (funciona perfecto con proxy PHP)
       const apiResponse = await apiClient.post(
-        '/marcaciones/registrar-con-foto', 
-        formData, 
+        '/marcaciones/registrar-con-foto-base64', 
+        {
+          email,
+          password,
+          accion,
+          fotoBase64: fotoCapturada // Ya está en base64 desde la captura
+        },
         {
           headers: {
-            'Content-Type': 'multipart/form-data'
+            'Content-Type': 'application/json'
           },
-          timeout: 60000, // 60 segundos
-          onUploadProgress: (progressEvent) => {
-            const percentCompleted = Math.round((progressEvent.loaded * 100) / progressEvent.total);
-            console.log(`📤 Progreso de subida: ${percentCompleted}%`);
-          }
+          timeout: 60000 // 60 segundos
         }
       );
       

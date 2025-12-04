@@ -300,6 +300,12 @@ export const notificacionesAPI = {
   
   enviarMensajePrueba: (mensaje) =>
     apiClient.post('/notificaciones/whatsapp/enviar-prueba', { mensaje }),
+  
+  obtenerEstadoNotificaciones: () =>
+    apiClient.get('/notificaciones/estado'),
+  
+  cambiarEstadoNotificaciones: (estado) =>
+    apiClient.post('/notificaciones/estado', { estado }),
 };
 
 export const feriadosAPI = {

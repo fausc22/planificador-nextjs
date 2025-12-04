@@ -10,13 +10,45 @@ export default function NotificacionesLogueos() {
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState(true);
   const [verificando, setVerificando] = useState(false);
+  const [notificacionesActivas, setNotificacionesActivas] = useState(true);
+  const [cambiandoEstado, setCambiandoEstado] = useState(false);
 
   useEffect(() => {
     cargarNotificaciones();
+    cargarEstadoNotificaciones();
     // Recargar cada 5 minutos
     const interval = setInterval(cargarNotificaciones, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
+
+  const cargarEstadoNotificaciones = async () => {
+    try {
+      const response = await notificacionesAPI.obtenerEstadoNotificaciones();
+      if (response.data.success) {
+        setNotificacionesActivas(response.data.data.activo);
+      }
+    } catch (error) {
+      console.error('Error cargando estado de notificaciones:', error);
+    }
+  };
+
+  const cambiarEstadoNotificaciones = async () => {
+    try {
+      setCambiandoEstado(true);
+      const nuevoEstado = notificacionesActivas ? 'OFF' : 'ON';
+      const response = await notificacionesAPI.cambiarEstadoNotificaciones(nuevoEstado);
+      
+      if (response.data.success) {
+        setNotificacionesActivas(response.data.data.activo);
+        toast.success(response.data.message);
+      }
+    } catch (error) {
+      console.error('Error cambiando estado de notificaciones:', error);
+      toast.error('Error al cambiar el estado de las notificaciones');
+    } finally {
+      setCambiandoEstado(false);
+    }
+  };
 
   const cargarNotificaciones = async () => {
     try {
@@ -81,7 +113,36 @@ export default function NotificacionesLogueos() {
               </p>
             </div>
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-3">
+            {/* Switch ON/OFF para notificaciones */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                WhatsApp
+              </span>
+              <button
+                onClick={cambiarEstadoNotificaciones}
+                disabled={cambiandoEstado}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                  notificacionesActivas
+                    ? 'bg-green-600'
+                    : 'bg-gray-300 dark:bg-gray-600'
+                } ${cambiandoEstado ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+                title={notificacionesActivas ? 'Notificaciones activadas' : 'Notificaciones desactivadas'}
+              >
+                <span
+                  className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                    notificacionesActivas ? 'translate-x-6' : 'translate-x-1'
+                  }`}
+                />
+              </button>
+              <span className={`text-xs font-medium ${
+                notificacionesActivas
+                  ? 'text-green-600 dark:text-green-400'
+                  : 'text-gray-500 dark:text-gray-400'
+              }`}>
+                {notificacionesActivas ? 'ON' : 'OFF'}
+              </span>
+            </div>
             <button
               onClick={cargarNotificaciones}
               className="p-2 text-green-600 hover:bg-green-100 dark:hover:bg-green-900/30 rounded-lg transition-colors"
@@ -129,6 +190,35 @@ export default function NotificacionesLogueos() {
           </div>
         </div>
         <div className="flex items-center space-x-2" style={{ zIndex: 10, position: 'relative' }}>
+          {/* Switch ON/OFF para notificaciones */}
+          <div className="flex items-center space-x-2 px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
+              WhatsApp
+            </span>
+            <button
+              onClick={cambiarEstadoNotificaciones}
+              disabled={cambiandoEstado}
+              className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${
+                notificacionesActivas
+                  ? 'bg-green-600'
+                  : 'bg-gray-300 dark:bg-gray-600'
+              } ${cambiandoEstado ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}`}
+              title={notificacionesActivas ? 'Notificaciones activadas' : 'Notificaciones desactivadas'}
+            >
+              <span
+                className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                  notificacionesActivas ? 'translate-x-6' : 'translate-x-1'
+                }`}
+              />
+            </button>
+            <span className={`text-xs font-medium ${
+              notificacionesActivas
+                ? 'text-green-600 dark:text-green-400'
+                : 'text-gray-500 dark:text-gray-400'
+            }`}>
+              {notificacionesActivas ? 'ON' : 'OFF'}
+            </span>
+          </div>
           <button
             type="button"
             onClick={() => {

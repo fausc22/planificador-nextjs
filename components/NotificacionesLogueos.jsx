@@ -115,7 +115,7 @@ export default function NotificacionesLogueos() {
           </div>
           <div className="flex items-center space-x-3">
             {/* Switch ON/OFF para notificaciones */}
-            <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2">
               <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 WhatsApp
               </span>

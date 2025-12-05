@@ -143,9 +143,19 @@ export default function Empleados() {
   const guardarEmpleado = async () => {
     try {
       const formDataToSend = new FormData();
-      Object.keys(formData).forEach(key => {
-        formDataToSend.append(key, formData[key]);
-      });
+      
+      // Asegurarse de que todos los campos tengan valores válidos antes de enviarlos
+      // Campos obligatorios
+      formDataToSend.append('nombre', formData.nombre || '');
+      formDataToSend.append('apellido', formData.apellido || '');
+      formDataToSend.append('mail', formData.mail || '');
+      formDataToSend.append('fecha_ingreso', formData.fecha_ingreso || '');
+      formDataToSend.append('hora_normal', formData.hora_normal || '0');
+      
+      // Campos opcionales - asegurarse de enviar valores válidos o vacíos
+      formDataToSend.append('antiguedad', formData.antiguedad !== undefined && formData.antiguedad !== null && formData.antiguedad !== '' ? formData.antiguedad : '0');
+      formDataToSend.append('dia_vacaciones', formData.dia_vacaciones !== undefined && formData.dia_vacaciones !== null && formData.dia_vacaciones !== '' ? formData.dia_vacaciones : '14');
+      formDataToSend.append('horas_vacaciones', formData.horas_vacaciones !== undefined && formData.horas_vacaciones !== null && formData.horas_vacaciones !== '' ? formData.horas_vacaciones : '0');
       
       if (archivoFoto) {
         formDataToSend.append('foto_perfil', archivoFoto);

@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
 import { empleadosAPI } from '../../utils/api';
+import { useEmpleadoForm } from '../../hooks/useEmpleadoForm';
 import { FiPlus, FiEdit, FiTrash2, FiSearch, FiUser, FiMail, FiCalendar, FiDollarSign, FiX, FiSave, FiUpload, FiGrid, FiList, FiAlertCircle, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -17,18 +18,20 @@ export default function Empleados() {
   // Modal
   const [modalAbierto, setModalAbierto] = useState(false);
   const [empleadoEditando, setEmpleadoEditando] = useState(null);
-  const [formData, setFormData] = useState({
-    nombre: '',
-    apellido: '',
-    mail: '',
-    fecha_ingreso: '',
-    antiguedad: 0,
-    hora_normal: '',
-    dia_vacaciones: 14,
-    horas_vacaciones: 0
-  });
-  const [fotoPreview, setFotoPreview] = useState(null);
-  const [archivoFoto, setArchivoFoto] = useState(null);
+  
+  // Hook personalizado para manejar el formulario
+  const {
+    formData,
+    fotoPreview,
+    archivoFoto,
+    actualizarCampo,
+    resetearFormulario,
+    manejarCambioFoto,
+    limpiarFoto,
+    validarFormulario,
+    construirFormData,
+    obtenerValores
+  } = useEmpleadoForm(null);
   
   // Modal para opciones de cambio de tarifa
   const [modalCambioTarifa, setModalCambioTarifa] = useState(false);
@@ -59,36 +62,11 @@ export default function Empleados() {
     if (empleado) {
       setEmpleadoEditando(empleado);
       setHoraNormalAnterior(empleado.hora_normal);
-      setFormData({
-        nombre: empleado.nombre,
-        apellido: empleado.apellido,
-        mail: empleado.email || empleado.mail,
-        fecha_ingreso: empleado.fecha_ingreso,
-        antiguedad: empleado.antiguedad,
-        hora_normal: empleado.hora_normal,
-        dia_vacaciones: empleado.dia_vacaciones,
-        horas_vacaciones: empleado.horas_vacaciones || 0
-      });
-      if (empleado.foto_perfil_url) {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/planificador';
-      const baseUrl = apiUrl.replace(/\/planificador$/, '');
-      setFotoPreview(`${baseUrl}${empleado.foto_perfil_url}`);
-      }
+      resetearFormulario(empleado);
     } else {
       setEmpleadoEditando(null);
       setHoraNormalAnterior(null);
-      setFormData({
-        nombre: '',
-        apellido: '',
-        mail: '',
-        fecha_ingreso: new Date().toLocaleDateString('es-AR').replace(/\//g, '/'),
-        antiguedad: 0,
-        hora_normal: '',
-        dia_vacaciones: 14,
-        horas_vacaciones: 0
-      });
-      setFotoPreview(null);
-      setArchivoFoto(null);
+      resetearFormulario();
     }
     setModalAbierto(true);
     setModalCambioTarifa(false);
@@ -100,33 +78,27 @@ export default function Empleados() {
     setModalCambioTarifa(false);
     setEmpleadoEditando(null);
     setHoraNormalAnterior(null);
-    setFotoPreview(null);
-    setArchivoFoto(null);
+    limpiarFoto();
+    resetearFormulario();
     setOpcionAplicacion('desde_hoy');
   };
 
   const handleFotoChange = (e) => {
     const file = e.target.files[0];
     if (file) {
-      if (file.size > 5 * 1024 * 1024) {
-        toast.error('La imagen no puede superar 5MB');
-        return;
-      }
-      
-      setArchivoFoto(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setFotoPreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+      manejarCambioFoto(file, (error) => {
+        toast.error(error);
+      });
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!formData.nombre || !formData.apellido || !formData.mail || !formData.hora_normal) {
-      toast.error('Completa todos los campos obligatorios');
+    // Validar formulario
+    const validacion = validarFormulario();
+    if (!validacion.valido) {
+      toast.error(validacion.errores[0] || 'Completa todos los campos obligatorios');
       return;
     }
 
@@ -142,28 +114,19 @@ export default function Empleados() {
 
   const guardarEmpleado = async () => {
     try {
-      const formDataToSend = new FormData();
-      
-      // Asegurarse de que todos los campos tengan valores válidos antes de enviarlos
-      // Campos obligatorios
-      formDataToSend.append('nombre', formData.nombre || '');
-      formDataToSend.append('apellido', formData.apellido || '');
-      formDataToSend.append('mail', formData.mail || '');
-      formDataToSend.append('fecha_ingreso', formData.fecha_ingreso || '');
-      formDataToSend.append('hora_normal', formData.hora_normal || '0');
-      
-      // Campos opcionales - asegurarse de enviar valores válidos o vacíos
-      formDataToSend.append('antiguedad', formData.antiguedad !== undefined && formData.antiguedad !== null && formData.antiguedad !== '' ? formData.antiguedad : '0');
-      formDataToSend.append('dia_vacaciones', formData.dia_vacaciones !== undefined && formData.dia_vacaciones !== null && formData.dia_vacaciones !== '' ? formData.dia_vacaciones : '14');
-      formDataToSend.append('horas_vacaciones', formData.horas_vacaciones !== undefined && formData.horas_vacaciones !== null && formData.horas_vacaciones !== '' ? formData.horas_vacaciones : '0');
-      
-      if (archivoFoto) {
-        formDataToSend.append('foto_perfil', archivoFoto);
-      }
+      // Construir FormData usando el hook
+      const formDataToSend = construirFormData();
 
       // Si hay cambio de tarifa, agregar la opción seleccionada
       if (empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior)) {
         formDataToSend.append('aplicar_cambio_tarifa', opcionAplicacion);
+      }
+
+      // Log para debug (solo en desarrollo)
+      if (process.env.NODE_ENV === 'development') {
+        const valores = obtenerValores();
+        console.log('📤 Enviando datos del empleado:', valores);
+        console.log('📤 FormData tiene foto:', !!archivoFoto);
       }
 
       if (empleadoEditando) {
@@ -674,7 +637,7 @@ export default function Empleados() {
                     onClick={() => {
                       setModalCambioTarifa(false);
                       // Revertir el cambio de tarifa
-                      setFormData(prev => ({ ...prev, hora_normal: horaNormalAnterior }));
+                      actualizarCampo('hora_normal', horaNormalAnterior);
                     }}
                     className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
                   >
@@ -760,7 +723,7 @@ export default function Empleados() {
                       <input
                         type="text"
                         value={formData.nombre}
-                        onChange={(e) => setFormData(prev => ({ ...prev, nombre: e.target.value }))}
+                        onChange={(e) => actualizarCampo('nombre', e.target.value)}
                         className="input w-full"
                         required
                       />
@@ -774,7 +737,7 @@ export default function Empleados() {
                       <input
                         type="text"
                         value={formData.apellido}
-                        onChange={(e) => setFormData(prev => ({ ...prev, apellido: e.target.value }))}
+                        onChange={(e) => actualizarCampo('apellido', e.target.value)}
                         className="input w-full"
                         required
                       />
@@ -788,7 +751,7 @@ export default function Empleados() {
                       <input
                         type="email"
                         value={formData.mail}
-                        onChange={(e) => setFormData(prev => ({ ...prev, mail: e.target.value }))}
+                        onChange={(e) => actualizarCampo('mail', e.target.value)}
                         className="input w-full"
                         required
                       />
@@ -802,7 +765,7 @@ export default function Empleados() {
                       <input
                         type="text"
                         value={formData.fecha_ingreso}
-                        onChange={(e) => setFormData(prev => ({ ...prev, fecha_ingreso: e.target.value }))}
+                        onChange={(e) => actualizarCampo('fecha_ingreso', e.target.value)}
                         placeholder="DD/MM/YYYY"
                         className="input w-full"
                         required
@@ -817,7 +780,7 @@ export default function Empleados() {
                       <input
                         type="number"
                         value={formData.hora_normal}
-                        onChange={(e) => setFormData(prev => ({ ...prev, hora_normal: e.target.value }))}
+                        onChange={(e) => actualizarCampo('hora_normal', e.target.value)}
                         className="input w-full text-sm sm:text-base"
                         min="0"
                         step="0.01"
@@ -839,7 +802,7 @@ export default function Empleados() {
                       <input
                         type="number"
                         value={formData.dia_vacaciones}
-                        onChange={(e) => setFormData(prev => ({ ...prev, dia_vacaciones: e.target.value }))}
+                        onChange={(e) => actualizarCampo('dia_vacaciones', e.target.value)}
                         className="input w-full"
                         min="0"
                       />
@@ -853,7 +816,7 @@ export default function Empleados() {
                       <input
                         type="number"
                         value={formData.antiguedad}
-                        onChange={(e) => setFormData(prev => ({ ...prev, antiguedad: e.target.value }))}
+                        onChange={(e) => actualizarCampo('antiguedad', e.target.value)}
                         className="input w-full"
                         min="0"
                       />
@@ -867,7 +830,7 @@ export default function Empleados() {
                       <input
                         type="number"
                         value={formData.horas_vacaciones}
-                        onChange={(e) => setFormData(prev => ({ ...prev, horas_vacaciones: e.target.value }))}
+                        onChange={(e) => actualizarCampo('horas_vacaciones', e.target.value)}
                         className="input w-full"
                         min="0"
                         placeholder="Opcional"

@@ -1,16 +1,33 @@
-// components/ProtectedRoute.jsx - Componente para proteger rutas
+// components/ProtectedRoute.jsx - Componente para proteger rutas según roles
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/router';
 import { useAuth } from '../context/AuthContext';
 import { hasValidToken, isTokenExpired, clearAuthData } from '../utils/tokenUtils';
 import { apiClient } from '../utils/api';
+import Loading from './Loading';
 
-// Rutas públicas que no requieren autenticación
-const PUBLIC_ROUTES = ['/asistencia', '/login', '/marcar-asistencia'];
+// Configuración de rutas y sus roles permitidos
+const ROUTE_PERMISSIONS = {
+  '/dashboard': ['gerente', 'user'],
+  '/planificador': ['gerente'],
+  '/logueos': ['gerente', 'user'],
+  '/asistencia': ['gerente', 'user'],
+  '/control-horas': ['gerente', 'user'],
+  '/recibos': ['gerente'],
+  '/pagos-extras': ['gerente'],
+  '/vacaciones': ['gerente'],
+  '/empleados': ['gerente'],
+  '/turnos': ['gerente', 'user'],
+  '/feriados': ['gerente', 'user'],
+  '/usuarios': ['gerente'],
+};
+
+// Rutas que no requieren autenticación
+const PUBLIC_ROUTES = ['/login', '/asistencia', '/marcar-asistencia'];
 
 export default function ProtectedRoute({ children }) {
   const router = useRouter();
-  const { loading, refreshAccessToken } = useAuth();
+  const { user, loading, refreshAccessToken } = useAuth();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
 
@@ -41,10 +58,7 @@ export default function ProtectedRoute({ children }) {
         if (refreshToken) {
           try {
             await refreshAccessToken();
-            // Token refrescado exitosamente
-            setIsAuthorized(true);
-            setIsChecking(false);
-            return;
+            // Token refrescado exitosamente, continuar con verificación de roles
           } catch (error) {
             // Refresh falló, limpiar y redirigir
             console.error('Error refrescando token:', error);
@@ -62,7 +76,30 @@ export default function ProtectedRoute({ children }) {
         }
       }
 
-      // Token válido, permitir acceso
+      // Si no hay usuario después de verificar token, redirigir
+      if (!user) {
+        router.replace('/login');
+        setIsChecking(false);
+        return;
+      }
+
+      // Verificar permisos según la ruta
+      const route = router.pathname;
+      const allowedRoles = ROUTE_PERMISSIONS[route];
+
+      // Si la ruta no está en el mapa de permisos, permitir acceso (rutas nuevas)
+      if (allowedRoles) {
+        const userRole = user.rol?.toLowerCase();
+        
+        if (!userRole || !allowedRoles.includes(userRole)) {
+          // Usuario no tiene permiso para esta ruta
+          router.replace('/dashboard');
+          setIsChecking(false);
+          return;
+        }
+      }
+
+      // Todo OK, autorizar acceso
       setIsAuthorized(true);
       setIsChecking(false);
     };
@@ -71,7 +108,7 @@ export default function ProtectedRoute({ children }) {
     if (router.isReady && !loading) {
       checkAuth();
     }
-  }, [router.pathname, router.isReady, loading, refreshAccessToken]);
+  }, [router.pathname, router.isReady, loading, user, refreshAccessToken, router]);
 
   // Mostrar loading mientras se verifica
   if (isChecking || loading) {
@@ -93,4 +130,3 @@ export default function ProtectedRoute({ children }) {
   // Renderizar el contenido protegido
   return <>{children}</>;
 }
-

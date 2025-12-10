@@ -27,16 +27,17 @@ export default function Layout({ children }) {
   };
 
   const navigation = [
-    { name: 'Dashboard', href: '/dashboard', icon: FiHome },
-    { name: 'Planificador', href: '/planificador', icon: FiCalendar },
-    { name: 'Asistencia', href: '/logueos', icon: FiClock },
-    { name: 'Control de Horas', href: '/control-horas', icon: FiClock },
-    { name: 'Recibos', href: '/recibos', icon: FiDollarSign },
-    { name: 'Pagos Extras', href: '/pagos-extras', icon: FiDollarSign },
-    { name: 'Vacaciones', href: '/vacaciones', icon: FiCalendar },
-    { name: 'Empleados', href: '/empleados', icon: FiUsers },
-    { name: 'Turnos', href: '/turnos', icon: FiClock },
-    { name: 'Feriados', href: '/feriados', icon: FiStar },
+    { name: 'Dashboard', href: '/dashboard', icon: FiHome, roles: ['gerente', 'user'] },
+    { name: 'Planificador', href: '/planificador', icon: FiCalendar, roles: ['gerente'] },
+    { name: 'Asistencia', href: '/logueos', icon: FiClock, roles: ['gerente', 'user'] },
+    { name: 'Control de Horas', href: '/control-horas', icon: FiClock, roles: ['gerente', 'user'] },
+    { name: 'Recibos', href: '/recibos', icon: FiDollarSign, roles: ['gerente'] },
+    { name: 'Pagos Extras', href: '/pagos-extras', icon: FiDollarSign, roles: ['gerente'] },
+    { name: 'Vacaciones', href: '/vacaciones', icon: FiCalendar, roles: ['gerente'] },
+    { name: 'Empleados', href: '/empleados', icon: FiUsers, roles: ['gerente'] },
+    { name: 'Turnos', href: '/turnos', icon: FiClock, roles: ['gerente', 'user'] },
+    { name: 'Feriados', href: '/feriados', icon: FiStar, roles: ['gerente', 'user'] },
+    { name: 'Usuarios', href: '/usuarios', icon: FiUsers, roles: ['gerente'] },
   ];
 
   const isActive = (href) => {
@@ -108,26 +109,33 @@ export default function Layout({ children }) {
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <nav className="p-4 space-y-2">
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
+          {navigation
+            .filter((item) => {
+              // Filtrar por rol del usuario
+              if (!item.roles) return true; // Si no tiene restricción de roles, mostrar a todos
+              if (!user) return false;
+              return item.roles.includes(user.rol?.toLowerCase());
+            })
+            .map((item) => {
+              const Icon = item.icon;
+              const active = isActive(item.href);
 
-            return (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
-                  active
-                    ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-ternary-dark'
-                }`}
-                onClick={() => setSidebarOpen(false)}
-              >
-                <Icon className="text-xl" />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
+              return (
+                <Link
+                  key={item.name}
+                  href={item.href}
+                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                    active
+                      ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-ternary-dark'
+                  }`}
+                  onClick={() => setSidebarOpen(false)}
+                >
+                  <Icon className="text-xl" />
+                  <span>{item.name}</span>
+                </Link>
+              );
+            })}
         </nav>
 
         {/* Footer del Sidebar */}

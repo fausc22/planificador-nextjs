@@ -1,4 +1,4 @@
-// pages/planificador/index.jsx - Planificador modularizado con React Query y sincronización de URL
+// pages/planificador/index-refactored.jsx - Planificador refactorizado y modularizado
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
@@ -41,10 +41,10 @@ export default function Planificador() {
   const [vistaMobile, setVistaMobile] = useState(false);
   const [coloresEmpleados, setColoresEmpleados] = useState({});
   const [empleadoParaPdf, setEmpleadoParaPdf] = useState('todos');
-  const [generandoPdf, setGenerandoPdf] = useState(false);
 
   // Modales
   const modalPdf = useModal();
+  const modalTurnos = useModal();
 
   const { showError, showSuccess } = useToast();
 
@@ -158,7 +158,6 @@ export default function Planificador() {
   // Generar PDF
   const generarPdf = async () => {
     try {
-      setGenerandoPdf(true);
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/planeamiento/pdf/${mes}/${anio}`, {
         method: 'POST',
         headers: {
@@ -190,8 +189,6 @@ export default function Planificador() {
     } catch (error) {
       console.error('Error al descargar PDF:', error);
       showError('Error al generar PDF');
-    } finally {
-      setGenerandoPdf(false);
     }
   };
 
@@ -356,7 +353,7 @@ export default function Planificador() {
           planificador={planificador}
           coloresEmpleados={coloresEmpleados}
           empleadoParaPdf={empleadoParaPdf}
-          generandoPdf={generandoPdf}
+          generandoPdf={false}
           onCambiarEmpleadoPdf={setEmpleadoParaPdf}
           onCambiarColor={(empleado, color) => setColoresEmpleados(prev => ({ ...prev, [empleado]: color }))}
           onAplicarPaleta={aplicarPaleta}

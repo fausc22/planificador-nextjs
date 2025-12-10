@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '../context/AuthContext';
 import { ThemeProvider } from '../context/ThemeContext';
 import ProtectedRoute from '../components/ProtectedRoute';
+import { QueryClientProvider, ReactQueryDevtools, queryClient } from '../lib/react-query';
 import '../styles/globals.css';
 
 // Rutas públicas que no requieren autenticación
@@ -33,44 +34,47 @@ export default function App({ Component, pageProps }) {
   }, []);
 
   return (
-    <ThemeProvider>
-      <AuthProvider>
-        {isPublicRoute ? (
-          <Component {...pageProps} />
-        ) : (
-          <ProtectedRoute>
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <AuthProvider>
+          {isPublicRoute ? (
             <Component {...pageProps} />
-          </ProtectedRoute>
-        )}
-        
-        {/* Toast notifications globales */}
-        <Toaster
-          position="top-right"
-          reverseOrder={false}
-          toastOptions={{
-            duration: 3000,
-            style: {
-              background: '#363636',
-              color: '#fff',
-            },
-            success: {
+          ) : (
+            <ProtectedRoute>
+              <Component {...pageProps} />
+            </ProtectedRoute>
+          )}
+          
+          {/* Toast notifications globales */}
+          <Toaster
+            position="top-right"
+            reverseOrder={false}
+            toastOptions={{
               duration: 3000,
-              iconTheme: {
-                primary: '#10b981',
-                secondary: '#fff',
+              style: {
+                background: '#363636',
+                color: '#fff',
               },
-            },
-            error: {
-              duration: 4000,
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
+              success: {
+                duration: 3000,
+                iconTheme: {
+                  primary: '#10b981',
+                  secondary: '#fff',
+                },
               },
-            },
-          }}
-        />
-      </AuthProvider>
-    </ThemeProvider>
+              error: {
+                duration: 4000,
+                iconTheme: {
+                  primary: '#ef4444',
+                  secondary: '#fff',
+                },
+              },
+            }}
+          />
+        </AuthProvider>
+      </ThemeProvider>
+      {process.env.NODE_ENV === 'development' && <ReactQueryDevtools initialIsOpen={false} />}
+    </QueryClientProvider>
   );
 }
 

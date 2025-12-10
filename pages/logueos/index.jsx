@@ -18,7 +18,7 @@ export default function Logueos() {
   const [loading, setLoading] = useState(false);
   const [loadingEmpleados, setLoadingEmpleados] = useState(true);
 
-  // Estados para modal de configuración
+  // Estados para modal de configuraci?n
   const [modalConfiguracion, setModalConfiguracion] = useState(false);
   const [contrasenaActual, setContrasenaActual] = useState('');
   const [contrasenaNueva, setContrasenaNueva] = useState('');
@@ -102,7 +102,7 @@ export default function Logueos() {
     return { ingresos, egresos };
   };
 
-  // Cargar configuración actual cuando se abre el modal
+  // Cargar configuraci?n actual cuando se abre el modal
   const cargarConfiguracion = async () => {
     try {
       const response = await apiClient.get('/logueo/configuracion');
@@ -111,23 +111,23 @@ export default function Logueos() {
         setTelefono(response.data.telefono || '');
       }
     } catch (error) {
-      console.error('Error al cargar configuración:', error);
-      toast.error('Error al cargar configuración');
+      console.error('Error al cargar configuraci?n:', error);
+      toast.error('Error al cargar configuraci?n');
     }
   };
 
-  // Abrir modal de configuración
+  // Abrir modal de configuraci?n
   const abrirModalConfiguracion = () => {
     setModalConfiguracion(true);
     cargarConfiguracion();
   };
 
-  // Actualizar configuración de logueo
+  // Actualizar configuraci?n de logueo
   const handleActualizarConfiguracion = async (e) => {
     e.preventDefault();
     
     if (!contrasenaNueva && !telefono) {
-      toast.error('Por favor ingresa al menos una configuración para actualizar');
+      toast.error('Por favor ingresa al menos una configuraci?n para actualizar');
       return;
     }
 
@@ -138,7 +138,7 @@ export default function Logueos() {
       });
 
       if (response.data.success) {
-        toast.success(response.data.message || 'Configuración actualizada exitosamente');
+        toast.success(response.data.message || 'Configuraci?n actualizada exitosamente');
         setModalConfiguracion(false);
         setContrasenaActual('');
         setContrasenaNueva('');
@@ -147,8 +147,8 @@ export default function Logueos() {
         setMostrarContrasenaNueva(false);
       }
     } catch (error) {
-      console.error('Error al actualizar configuración:', error);
-      toast.error(error.response?.data?.message || 'Error al actualizar configuración');
+      console.error('Error al actualizar configuraci?n:', error);
+      toast.error(error.response?.data?.message || 'Error al actualizar configuraci?n');
     }
   };
 
@@ -164,7 +164,7 @@ export default function Logueos() {
     e.preventDefault();
 
     if (!nuevaHora) {
-      toast.error('Ingresa una hora válida');
+      toast.error('Ingresa una hora v?lida');
       return;
     }
 
@@ -261,7 +261,7 @@ export default function Logueos() {
       const baseUrl = apiUrl.replace(/\/planificador$/, '');
       const fotoUrl = `${baseUrl}/uploads/logueos/${logueo.foto_logueo}`;
       
-      console.log('🖼️ Abriendo foto:', fotoUrl);
+      console.log('??? Abriendo foto:', fotoUrl);
       
       setFotoActual({
         url: fotoUrl,
@@ -272,7 +272,7 @@ export default function Logueos() {
       });
       setModalVerFoto(true);
     } else {
-      toast.error('Este logueo no tiene foto de verificación');
+      toast.error('Este logueo no tiene foto de verificaci?n');
     }
   };
 
@@ -311,8 +311,8 @@ export default function Logueos() {
                 className="btn btn-secondary flex items-center justify-center space-x-2 text-sm sm:text-base"
               >
                 <FiKey />
-                <span className="hidden sm:inline">Configuración Logueo</span>
-                <span className="sm:hidden">Contraseña</span>
+                <span className="hidden sm:inline">Configuraci?n Logueo</span>
+                <span className="sm:hidden">Contrase?a</span>
               </button>
               <button 
                 onClick={abrirModalCrear}
@@ -330,7 +330,7 @@ export default function Logueos() {
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Año
+                  A?o
                 </label>
                 <select
                   value={anio}
@@ -378,7 +378,7 @@ export default function Logueos() {
             </div>
           </div>
 
-          {/* Estadísticas */}
+          {/* Estad?sticas */}
           {!loading && logueos.length > 0 && (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               <div className="card bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
@@ -433,7 +433,7 @@ export default function Logueos() {
               <EmptyState
                 icon={FiClock}
                 title="No hay logueos"
-                description="No se encontraron logueos para el período seleccionado"
+                description="No se encontraron logueos para el per?odo seleccionado"
               />
             ) : (
               <>
@@ -444,7 +444,7 @@ export default function Logueos() {
                   <tr>
                     <th>Fecha</th>
                     <th>Empleado</th>
-                    <th>Acción</th>
+                    <th>Acci?n</th>
                     <th>Hora</th>
                         <th>Foto</th>
                     <th>Acciones</th>
@@ -483,7 +483,7 @@ export default function Logueos() {
                               <button
                                 onClick={() => abrirModalFoto(logueo)}
                                 className="text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300"
-                                title="Ver foto de verificación"
+                                title="Ver foto de verificaci?n"
                               >
                                 <FiImage className="text-lg" />
                               </button>
@@ -588,13 +588,13 @@ export default function Logueos() {
             )}
           </div>
 
-          {/* Modal: Configuración Logueo */}
+          {/* Modal: Configuraci?n Logueo */}
           {modalConfiguracion && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
               <div className="bg-white dark:bg-gray-800 rounded-lg max-w-md w-full p-6">
                 <div className="flex justify-between items-center mb-4">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Configuración Logueo
+                    Configuraci?n Logueo
                   </h2>
                   <button 
                     onClick={() => {
@@ -615,7 +615,7 @@ export default function Logueos() {
                   <div className="space-y-4">
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Contraseña Actual
+                        Contrase?a Actual
                       </label>
                       <div className="relative">
                         <input 
@@ -633,13 +633,13 @@ export default function Logueos() {
                         </button>
                       </div>
                       <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                        Esta es la contraseña que los empleados usan actualmente
+                        Esta es la contrase?a que los empleados usan actualmente
                       </p>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Nueva Contraseña
+                        Nueva Contrase?a
                       </label>
                       <div className="relative">
                         <input 
@@ -647,7 +647,7 @@ export default function Logueos() {
                           value={contrasenaNueva}
                           onChange={(e) => setContrasenaNueva(e.target.value)}
                           className="input pr-10"
-                          placeholder="Deja vacío para no cambiar"
+                          placeholder="Deja vac?o para no cambiar"
                         />
                         <button
                           type="button"
@@ -661,7 +661,7 @@ export default function Logueos() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Teléfono Notificaciones
+                        Tel?fono Notificaciones
                       </label>
                       <input 
                         type="text"
@@ -692,7 +692,7 @@ export default function Logueos() {
                       Cancelar
                     </button>
                     <button type="submit" className="btn btn-primary">
-                      Actualizar Configuración
+                      Actualizar Configuraci?n
                     </button>
                   </div>
                 </form>
@@ -832,7 +832,7 @@ export default function Logueos() {
 
                     <div>
                       <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                        Acción
+                        Acci?n
                       </label>
                       <select 
                         value={nuevoLogueo.accion}
@@ -847,7 +847,7 @@ export default function Logueos() {
 
                     <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
                       <p className="text-xs text-blue-700 dark:text-blue-300">
-                        <strong>Nota:</strong> El sistema validará automáticamente que la secuencia de INGRESO/EGRESO sea correcta y que no haya duplicados.
+                        <strong>Nota:</strong> El sistema validar? autom?ticamente que la secuencia de INGRESO/EGRESO sea correcta y que no haya duplicados.
                       </p>
                     </div>
                   </div>
@@ -869,13 +869,13 @@ export default function Logueos() {
             </div>
           )}
 
-          {/* Modal: Ver Foto de Verificación */}
+          {/* Modal: Ver Foto de Verificaci?n */}
           {modalVerFoto && fotoActual && (
             <div className="fixed inset-0 bg-black/75 flex items-center justify-center z-50 p-4">
               <div className="bg-white dark:bg-gray-800 rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
                 <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
                   <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-                    Foto de Verificación
+                    Foto de Verificaci?n
                   </h2>
                   <button 
                     onClick={cerrarModalFoto}
@@ -886,7 +886,7 @@ export default function Logueos() {
                 </div>
 
                 <div className="p-6">
-                  {/* Información del logueo */}
+                  {/* Informaci?n del logueo */}
                   <div className="mb-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
                     <div className="grid grid-cols-2 gap-4 text-sm">
                       <div>
@@ -902,7 +902,7 @@ export default function Logueos() {
                         <p className="text-gray-900 dark:text-white">{fotoActual.hora}</p>
                       </div>
                       <div>
-                        <span className="text-gray-600 dark:text-gray-400 font-medium">Acción:</span>
+                        <span className="text-gray-600 dark:text-gray-400 font-medium">Acci?n:</span>
                         <p className="text-gray-900 dark:text-white">
                           {fotoActual.accion === 'INGRESO' ? (
                             <span className="badge badge-success">INGRESO</span>
@@ -918,7 +918,7 @@ export default function Logueos() {
                   <div className="bg-gray-100 dark:bg-gray-900 rounded-lg p-4">
                     <img
                       src={fotoActual.url}
-                      alt={`Foto de verificación - ${fotoActual.empleado}`}
+                      alt={`Foto de verificaci?n - ${fotoActual.empleado}`}
                       className="w-full h-auto rounded-lg"
                       onError={(e) => {
                         e.target.style.display = 'none';

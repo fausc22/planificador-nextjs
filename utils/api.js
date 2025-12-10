@@ -288,6 +288,29 @@ export const turnosAPI = {
     apiClient.delete(`/turnos/${id}`),
 };
 
+export const usuariosAPI = {
+  obtenerTodos: () =>
+    apiClient.get('/usuarios'),
+  
+  obtenerPorId: (id) =>
+    apiClient.get(`/usuarios/${id}`),
+  
+  crear: (datos) =>
+    apiClient.post('/usuarios', datos),
+  
+  actualizar: (id, datos) =>
+    apiClient.put(`/usuarios/${id}`, datos),
+  
+  cambiarPassword: (id, password) =>
+    apiClient.put(`/usuarios/${id}/password`, { password }),
+  
+  toggleActivo: (id, activo) =>
+    apiClient.put(`/usuarios/${id}/toggle-activo`, { activo }),
+  
+  eliminar: (id) =>
+    apiClient.delete(`/usuarios/${id}`),
+};
+
 export const notificacionesAPI = {
   obtenerLogueosFaltantes: () =>
     apiClient.get('/notificaciones/logueos-faltantes'),

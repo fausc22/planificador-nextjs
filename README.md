@@ -1,8 +1,10 @@
-# 🎨 Frontend - Sistema de Planificación de Empleados
+# Frontend - Sistema de Planificación de Empleados
 
-## 📋 Descripción
+> **Nota:** Para información completa del proyecto, ver el [README principal](../README.md)
 
 Frontend desarrollado en **Next.js con JavaScript** y **Tailwind CSS** para el sistema de planificación de empleados.
+
+**Versión:** 2.0.0 - Refactorizado con componentes modulares, React Query y sincronización de URL
 
 ---
 

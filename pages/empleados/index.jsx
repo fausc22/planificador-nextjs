@@ -4,6 +4,7 @@ import Head from 'next/head';
 import Layout from '../../components/Layout';
 import { empleadosAPI } from '../../utils/api';
 import { useEmpleadoForm } from '../../hooks/useEmpleadoForm';
+import Select from '../../components/ui/Select';
 import { FiPlus, FiEdit, FiTrash2, FiSearch, FiUser, FiMail, FiCalendar, FiDollarSign, FiX, FiSave, FiUpload, FiGrid, FiList, FiAlertCircle, FiCheck } from 'react-icons/fi';
 import toast from 'react-hot-toast';
 
@@ -264,16 +265,18 @@ export default function Empleados() {
                 />
               </div>
               
-              <select
+              <Select
                 value={ordenarPor}
                 onChange={(e) => ordenarEmpleados(e.target.value)}
-                className="px-3 sm:px-4 py-2 border rounded-lg dark:bg-secondary-dark dark:border-gray-600 text-sm sm:text-base"
-              >
-                <option value="nombre">Ordenar por Nombre</option>
-                <option value="apellido">Ordenar por Apellido</option>
-                <option value="fecha_ingreso">Ordenar por Antigüedad</option>
-                <option value="hora_normal">Ordenar por Tarifa</option>
-              </select>
+                options={[
+                  { value: 'nombre', label: 'Ordenar por Nombre' },
+                  { value: 'apellido', label: 'Ordenar por Apellido' },
+                  { value: 'fecha_ingreso', label: 'Ordenar por Antigüedad' },
+                  { value: 'hora_normal', label: 'Ordenar por Tarifa' }
+                ]}
+                containerClassName="mb-0 w-full sm:w-auto sm:min-w-[200px]"
+                className="text-sm sm:text-base"
+              />
             </div>
           </div>
 

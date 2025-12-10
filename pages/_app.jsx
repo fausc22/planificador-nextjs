@@ -1,5 +1,6 @@
 // pages/_app.jsx - Configuración global de la aplicación
 import { useEffect } from 'react';
+import Head from 'next/head';
 import { useRouter } from 'next/router';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '../context/AuthContext';
@@ -35,6 +36,9 @@ export default function App({ Component, pageProps }) {
 
   return (
     <QueryClientProvider client={queryClient}>
+      <Head>
+        <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
+      </Head>
       <ThemeProvider>
         <AuthProvider>
           {isPublicRoute ? (

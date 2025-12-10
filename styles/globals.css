@@ -261,6 +261,21 @@ a {
   }
 }
 
+/* Mejoras de responsividad para tablas */
+@media (max-width: 768px) {
+  .table {
+    font-size: 0.875rem;
+  }
+  
+  .table th,
+  .table td {
+    @apply px-2 py-2;
+  }
+}
+
+/* Asegurar encoding UTF-8 */
+@charset "UTF-8";
+
 /* Print styles */
 @media print {
   .no-print {

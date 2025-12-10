@@ -9,6 +9,7 @@ import ModalPDF from '../../components/planificador/ModalPDF';
 import WeeklyView from '../../components/WeeklyView';
 import ShiftSelector from '../../components/ShiftSelector';
 import Spinner from '../../components/ui/Spinner';
+import Select from '../../components/ui/Select';
 import { usePlanificador } from '../../hooks/usePlanificador';
 import { usePlanificadorFilters } from '../../hooks/usePlanificadorFilters';
 import { useModal } from '../../hooks/useModal';
@@ -274,20 +275,17 @@ export default function Planificador() {
           {/* Selector de empleado para móvil */}
           {vistaMobile && planificador?.empleados && (
             <div className="card mb-4">
-              <label className="block text-sm font-semibold mb-2 text-gray-700 dark:text-gray-300">
-                📱 Seleccionar Empleado:
-              </label>
-              <select
+              <Select
+                label="📱 Seleccionar Empleado"
                 value={empleadoSeleccionadoMovil || ''}
                 onChange={(e) => setEmpleadoSeleccionadoMovil(e.target.value)}
-                className="w-full px-4 py-3 border rounded-lg text-base dark:bg-secondary-dark dark:border-gray-600 font-medium"
-              >
-                {planificador.empleados.map((empleado) => (
-                  <option key={empleado} value={empleado}>
-                    {empleado}
-                  </option>
-                ))}
-              </select>
+                options={planificador.empleados.map((empleado) => ({
+                  value: empleado,
+                  label: empleado
+                }))}
+                containerClassName="mb-0"
+                className="text-base font-medium"
+              />
             </div>
           )}
 

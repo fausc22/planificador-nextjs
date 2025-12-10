@@ -4,6 +4,7 @@ import Head from 'next/head';
 import Layout from '../../components/Layout';
 import Loading from '../../components/Loading';
 import EmptyState from '../../components/EmptyState';
+import Select from '../../components/ui/Select';
 import { FiStar, FiPlus, FiEdit, FiTrash2, FiX, FiCalendar } from 'react-icons/fi';
 import { apiClient } from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -127,18 +128,18 @@ export default function Feriados() {
       <Layout>
         <div className="container-custom py-8">
           {/* Header */}
-          <div className="mb-6 flex justify-between items-center">
+          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                 Feriados
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
                 Gestión de días feriados y no laborables
               </p>
             </div>
             <button
               onClick={() => abrirModal()}
-              className="btn-primary flex items-center space-x-2"
+              className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center"
             >
               <FiPlus />
               <span>Nuevo Feriado</span>
@@ -146,21 +147,19 @@ export default function Feriados() {
           </div>
 
           {/* Filtro por Año */}
-          <div className="card mb-6">
+          <div className="card mb-4 sm:mb-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Filtrar por Año
-                </label>
-                <select
+                <Select
+                  label="Filtrar por Año"
                   value={anioFiltro}
                   onChange={(e) => setAnioFiltro(parseInt(e.target.value))}
-                  className="input"
-                >
-                  {[2024, 2025, 2026, 2027].map(a => (
-                    <option key={a} value={a}>{a}</option>
-                  ))}
-                </select>
+                  options={[2024, 2025, 2026, 2027].map(a => ({
+                    value: a,
+                    label: a.toString()
+                  }))}
+                  containerClassName="mb-0"
+                />
               </div>
             </div>
           </div>
@@ -323,24 +322,23 @@ export default function Feriados() {
 
                 {/* Día */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Día de la Semana <span className="text-red-500">*</span>
-                  </label>
-                  <select
+                  <Select
+                    label="Día de la Semana"
                     value={formData.dia}
                     onChange={(e) => setFormData({ ...formData, dia: e.target.value })}
-                    className="input w-full"
+                    options={[
+                      { value: '', label: 'Seleccionar día...' },
+                      { value: 'Lunes', label: 'Lunes' },
+                      { value: 'Martes', label: 'Martes' },
+                      { value: 'Miércoles', label: 'Miércoles' },
+                      { value: 'Jueves', label: 'Jueves' },
+                      { value: 'Viernes', label: 'Viernes' },
+                      { value: 'Sábado', label: 'Sábado' },
+                      { value: 'Domingo', label: 'Domingo' }
+                    ]}
                     required
-                  >
-                    <option value="">Seleccionar día...</option>
-                    <option value="Lunes">Lunes</option>
-                    <option value="Martes">Martes</option>
-                    <option value="Miércoles">Miércoles</option>
-                    <option value="Jueves">Jueves</option>
-                    <option value="Viernes">Viernes</option>
-                    <option value="Sábado">Sábado</option>
-                    <option value="Domingo">Domingo</option>
-                  </select>
+                    containerClassName="mb-0"
+                  />
                 </div>
 
                 {/* Período (Año) - Opcional */}

@@ -67,36 +67,46 @@ export default function Layout({ children }) {
             </div>
 
             {/* Usuario y Acciones */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-2 sm:space-x-4">
               {/* Toggle Tema */}
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-ternary-dark transition-colors"
                 aria-label="Cambiar tema"
               >
-                {theme === 'light' ? <FiMoon className="text-xl" /> : <FiSun className="text-xl" />}
+                {theme === 'light' ? <FiMoon className="text-lg sm:text-xl" /> : <FiSun className="text-lg sm:text-xl" />}
               </button>
 
               {/* Usuario */}
               {user && (
-                <div className="hidden sm:flex items-center space-x-3">
-                  <div className="text-right">
-                    <p className="text-sm font-medium text-gray-900 dark:text-white">
-                      {user.nombre} {user.apellido}
-                    </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
-                      {user.rol}
-                    </p>
+                <>
+                  <div className="hidden sm:flex items-center space-x-3">
+                    <div className="text-right">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[120px]">
+                        {user.nombre} {user.apellido}
+                      </p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {user.rol}
+                      </p>
+                    </div>
+                    
+                    <button
+                      onClick={handleLogout}
+                      className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      title="Cerrar sesión"
+                    >
+                      <FiLogOut className="text-xl" />
+                    </button>
                   </div>
-                  
+                  {/* Botón de logout en móvil (solo icono) */}
                   <button
                     onClick={handleLogout}
-                    className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    className="sm:hidden p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                     title="Cerrar sesión"
                   >
-                    <FiLogOut className="text-xl" />
+                    <FiLogOut className="text-lg" />
                   </button>
-                </div>
+                </>
               )}
             </div>
           </div>
@@ -108,7 +118,7 @@ export default function Layout({ children }) {
         className={`fixed top-16 left-0 h-[calc(100vh-4rem)] w-64 bg-white dark:bg-secondary-dark border-r border-gray-200 dark:border-gray-700 transition-transform duration-300 z-40 overflow-y-auto
           ${sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
-        <nav className="p-4 space-y-2">
+        <nav className="p-3 sm:p-4 space-y-1 sm:space-y-2">
           {navigation
             .filter((item) => {
               // Filtrar por rol del usuario
@@ -124,28 +134,28 @@ export default function Layout({ children }) {
                 <Link
                   key={item.name}
                   href={item.href}
-                  className={`flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                  className={`flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg transition-colors text-sm sm:text-base ${
                     active
                       ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-medium'
                       : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-ternary-dark'
                   }`}
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <Icon className="text-xl" />
-                  <span>{item.name}</span>
+                  <Icon className="text-lg sm:text-xl flex-shrink-0" />
+                  <span className="truncate">{item.name}</span>
                 </Link>
               );
             })}
         </nav>
 
         {/* Footer del Sidebar */}
-        <div className="p-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
+        <div className="p-3 sm:p-4 border-t border-gray-200 dark:border-gray-700 mt-auto">
           <button
             onClick={handleLogout}
-            className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            className="w-full flex items-center space-x-3 px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors text-sm sm:text-base"
           >
-            <FiLogOut className="text-xl" />
-            <span>Cerrar Sesión</span>
+            <FiLogOut className="text-lg sm:text-xl flex-shrink-0" />
+            <span className="truncate">Cerrar Sesión</span>
           </button>
         </div>
       </aside>

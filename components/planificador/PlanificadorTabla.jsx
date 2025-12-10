@@ -1,5 +1,6 @@
 // components/planificador/PlanificadorTabla.jsx - Tabla del planificador
 import { FiEdit2, FiSave, FiX } from 'react-icons/fi';
+import Select from '../ui/Select';
 
 export default function PlanificadorTabla({
   planificador,
@@ -29,20 +30,21 @@ export default function PlanificadorTabla({
   }
 
   return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="sticky top-0 bg-gray-100 dark:bg-secondary-dark z-10">
-          <tr>
-            <th className="sticky left-0 bg-gray-100 dark:bg-secondary-dark px-4 py-3 text-left font-semibold z-20 border-r border-gray-300 dark:border-gray-600">
-              Fecha
-            </th>
-            {empleadosFiltrados.map((empleado) => (
-              <th key={empleado} className="px-3 py-3 text-center font-semibold min-w-[100px]">
-                {vistaMobile ? '' : empleado}
+    <div className="overflow-x-auto -mx-4 sm:mx-0">
+      <div className="inline-block min-w-full align-middle">
+        <table className="w-full text-xs sm:text-sm">
+          <thead className="sticky top-0 bg-gray-100 dark:bg-secondary-dark z-10">
+            <tr>
+              <th className="sticky left-0 bg-gray-100 dark:bg-secondary-dark px-2 sm:px-4 py-2 sm:py-3 text-left font-semibold z-20 border-r border-gray-300 dark:border-gray-600 text-xs sm:text-sm">
+                Fecha
               </th>
-            ))}
-          </tr>
-        </thead>
+              {empleadosFiltrados.map((empleado) => (
+                <th key={empleado} className="px-2 sm:px-3 py-2 sm:py-3 text-center font-semibold min-w-[80px] sm:min-w-[100px] text-xs sm:text-sm">
+                  {vistaMobile ? '' : empleado}
+                </th>
+              ))}
+            </tr>
+          </thead>
         <tbody>
           {planificador.fechas.map((fecha) => (
             <tr
@@ -51,12 +53,12 @@ export default function PlanificadorTabla({
                 fecha.esFeriado ? 'bg-red-50 dark:bg-red-900/10' : ''
               }`}
             >
-              <td className="sticky left-0 bg-white dark:bg-secondary-dark px-4 py-3 font-medium border-r border-gray-300 dark:border-gray-600">
+              <td className="sticky left-0 bg-white dark:bg-secondary-dark px-2 sm:px-4 py-2 sm:py-3 font-medium border-r border-gray-300 dark:border-gray-600 z-10">
                 <div>
-                  <div className="text-gray-900 dark:text-white font-bold">
+                  <div className="text-gray-900 dark:text-white font-bold text-xs sm:text-sm">
                     {fecha.fecha}
                   </div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">
+                  <div className="text-[10px] sm:text-xs text-gray-500 dark:text-gray-400">
                     {fecha.diaSemana}
                   </div>
                 </div>
@@ -70,20 +72,16 @@ export default function PlanificadorTabla({
                   <td key={`${fecha.fecha}-${empleado}`} className="px-2 py-2">
                     {estaEditando ? (
                       <div className={vistaMobile ? "flex flex-col gap-2" : "flex items-center gap-1"}>
-                        <select
+                        <Select
                           value={turnoSeleccionado}
                           onChange={(e) => onCambiarTurnoSeleccionado(e.target.value)}
-                          className={`flex-1 border rounded dark:bg-gray-700 dark:border-gray-600 ${
-                            vistaMobile ? 'px-3 py-2 text-base' : 'px-2 py-1 text-xs'
-                          }`}
-                          autoFocus
-                        >
-                          {turnosDisponibles.map((t) => (
-                            <option key={t.id} value={t.turnos}>
-                              {t.turnos} {vistaMobile && `(${t.horas}h)`}
-                            </option>
-                          ))}
-                        </select>
+                          options={turnosDisponibles.map((t) => ({
+                            value: t.turnos,
+                            label: vistaMobile ? `${t.turnos} (${t.horas}h)` : t.turnos
+                          }))}
+                          containerClassName="mb-0 flex-1"
+                          className={vistaMobile ? 'text-base' : 'text-xs py-1'}
+                        />
                         {vistaMobile ? (
                           <div className="flex gap-2">
                             <button
@@ -130,10 +128,10 @@ export default function PlanificadorTabla({
                         } ${
                           vistaActual === 'turnos' ? 'cursor-pointer hover:ring-2 hover:ring-blue-400' : ''
                         } ${
-                          vistaMobile ? 'min-h-[60px] text-base' : 'min-h-[40px] text-sm'
+                          vistaMobile ? 'min-h-[50px] sm:min-h-[60px] text-sm sm:text-base' : 'min-h-[40px] text-xs sm:text-sm'
                         } group relative`}
                       >
-                        <span className="font-medium">
+                        <span className="font-medium break-words">
                           {vistaActual === 'turnos' && valor}
                           {vistaActual === 'horas' && (valor > 0 ? `${valor}h` : '-')}
                           {vistaActual === 'acumulado' && (valor > 0 ? `$${valor.toLocaleString('es-AR')}` : '-')}
@@ -175,6 +173,7 @@ export default function PlanificadorTabla({
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

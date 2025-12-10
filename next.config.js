@@ -14,6 +14,11 @@ const nextConfig = {
   // Trailing slash para compatibilidad con servidores estáticos
   trailingSlash: true,
 
+  // Configuración de encoding UTF-8
+  generateBuildId: async () => {
+    return 'build-' + Date.now();
+  },
+
   env: {
     API_URL: process.env.NEXT_PUBLIC_API_URL,
   },

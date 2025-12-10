@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
 import { turnosAPI } from '../../utils/api';
+import Select from '../../components/ui/Select';
 import { FiPlus, FiEdit, FiTrash2, FiClock, FiX, FiSave, FiAlertCircle } from 'react-icons/fi';
 import Loading from '../../components/Loading';
 import EmptyState from '../../components/EmptyState';
@@ -497,10 +498,8 @@ export default function Turnos() {
 
                 {/* Hora inicio */}
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                    Hora Inicio <span className="text-red-500">*</span>
-                  </label>
-                  <select
+                  <Select
+                    label="Hora Inicio"
                     value={formData.horaInicio}
                     onChange={(e) => {
                       setFormData(prev => ({ ...prev, horaInicio: e.target.value }));
@@ -508,16 +507,15 @@ export default function Turnos() {
                         setErrores(prev => ({ ...prev, horaInicio: null }));
                       }
                     }}
-                    className={`input w-full text-sm sm:text-base ${errores.horaInicio ? 'border-red-500' : ''}`}
+                    options={Array.from({ length: 24 }, (_, i) => ({
+                      value: i.toString(),
+                      label: `${String(i).padStart(2, '0')}:00 hs`
+                    }))}
+                    placeholder="Seleccionar..."
                     required
-                  >
-                    <option value="">Seleccionar...</option>
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i}>
-                        {String(i).padStart(2, '0')}:00 hs
-                      </option>
-                    ))}
-                  </select>
+                    error={errores.horaInicio}
+                    className={`text-sm sm:text-base ${errores.horaInicio ? 'border-red-500' : ''}`}
+                  />
                   {errores.horaInicio && (
                     <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
                       <FiAlertCircle size={14} />
@@ -528,10 +526,8 @@ export default function Turnos() {
 
                 {/* Hora fin */}
                 <div>
-                  <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                    Hora Fin <span className="text-red-500">*</span>
-                  </label>
-                  <select
+                  <Select
+                    label="Hora Fin"
                     value={formData.horaFin}
                     onChange={(e) => {
                       setFormData(prev => ({ ...prev, horaFin: e.target.value }));
@@ -539,16 +535,16 @@ export default function Turnos() {
                         setErrores(prev => ({ ...prev, horaFin: null }));
                       }
                     }}
-                    className={`input w-full text-sm sm:text-base ${errores.horaFin ? 'border-red-500' : ''}`}
+                    options={Array.from({ length: 24 }, (_, i) => ({
+                      value: i.toString(),
+                      label: i === 0 ? '00:00 hs (medianoche)' : `${String(i).padStart(2, '0')}:00 hs`
+                    }))}
+                    placeholder="Seleccionar..."
                     required
-                  >
-                    <option value="">Seleccionar...</option>
-                    {Array.from({ length: 24 }, (_, i) => (
-                      <option key={i} value={i}>
-                        {i === 0 ? '00:00 hs (medianoche)' : `${String(i).padStart(2, '0')}:00 hs`}
-                      </option>
-                    ))}
-                  </select>
+                    error={errores.horaFin}
+                    className={`text-sm sm:text-base ${errores.horaFin ? 'border-red-500' : ''}`}
+                    helperText="Si cruza medianoche (ej: 20 a 02), el sistema lo calcula automáticamente"
+                  />
                   {errores.horaFin && (
                     <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
                       <FiAlertCircle size={14} />

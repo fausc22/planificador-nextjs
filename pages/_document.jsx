@@ -6,6 +6,7 @@ export default function Document() {
     <Html lang="es">
       <Head>
         <meta charSet="utf-8" />
+        <meta httpEquiv="Content-Type" content="text/html; charset=utf-8" />
         <meta name="description" content="Sistema de Planificación de Empleados" />
         <meta name="theme-color" content="#3b82f6" />
         <link rel="icon" href="/favicon.ico" />

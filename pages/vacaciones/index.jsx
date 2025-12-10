@@ -4,6 +4,7 @@ import Head from 'next/head';
 import Layout from '../../components/Layout';
 import Loading from '../../components/Loading';
 import EmptyState from '../../components/EmptyState';
+import Select from '../../components/ui/Select';
 import { FiPlus, FiCalendar, FiEdit, FiTrash2, FiX, FiUser, FiSun, FiAlertCircle, FiMaximize2, FiMinimize2, FiChevronRight, FiChevronLeft } from 'react-icons/fi';
 import { apiClient } from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -378,36 +379,32 @@ export default function Vacaciones() {
           <div className="card mb-4 sm:mb-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Año
-                </label>
-                <select
+                <Select
+                  label="Año"
                   value={anioFiltro}
                   onChange={(e) => setAnioFiltro(parseInt(e.target.value))}
-                  className="input"
-                >
-                  {[2024, 2025, 2026, 2027].map(a => (
-                    <option key={a} value={a}>{a}</option>
-                  ))}
-                </select>
+                  options={[2024, 2025, 2026, 2027].map(a => ({
+                    value: a,
+                    label: a.toString()
+                  }))}
+                  containerClassName="mb-0"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Empleado
-                </label>
-                <select 
-                  className="input"
+                <Select
+                  label="Empleado"
                   value={empleadoFiltro}
                   onChange={(e) => setEmpleadoFiltro(e.target.value)}
-                >
-                  <option value="">Todos los empleados</option>
-                  {empleados.map((emp) => (
-                    <option key={emp.id} value={`${emp.nombre} ${emp.apellido}`}>
-                      {emp.nombre} {emp.apellido} ({emp.dia_vacaciones} días disponibles)
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Todos los empleados' },
+                    ...empleados.map((emp) => ({
+                      value: `${emp.nombre} ${emp.apellido}`,
+                      label: `${emp.nombre} ${emp.apellido} (${emp.dia_vacaciones} días disponibles)`
+                    }))
+                  ]}
+                  containerClassName="mb-0"
+                />
               </div>
             </div>
           </div>
@@ -707,23 +704,21 @@ export default function Vacaciones() {
               <form onSubmit={handleSubmit} className="p-6 space-y-6">
                 {/* Empleado */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Empleado <span className="text-red-500">*</span>
-                  </label>
-                  <select
+                  <Select
+                    label="Empleado"
                     value={formData.nombre_empleado}
                     onChange={(e) => handleEmpleadoChange(e.target.value)}
-                    className="input w-full"
+                    options={[
+                      { value: '', label: 'Seleccionar empleado...' },
+                      ...empleados.map((emp) => ({
+                        value: `${emp.nombre} ${emp.apellido}`,
+                        label: `${emp.nombre} ${emp.apellido} (${emp.dia_vacaciones} días disponibles)`
+                      }))
+                    ]}
                     required
                     disabled={vacacionEditando !== null}
-                  >
-                    <option value="">Seleccionar empleado...</option>
-                    {empleados.map((emp) => (
-                      <option key={emp.id} value={`${emp.nombre} ${emp.apellido}`}>
-                        {emp.nombre} {emp.apellido} ({emp.dia_vacaciones} días disponibles)
-                      </option>
-                    ))}
-                  </select>
+                    containerClassName="mb-0"
+                  />
                 </div>
 
                 {/* Días Disponibles */}

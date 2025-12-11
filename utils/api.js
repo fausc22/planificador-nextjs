@@ -14,6 +14,10 @@ export const apiClient = axios.create({
   timeout: 30000, // 30 segundos
 });
 
+// Nota: Cuando se envía FormData, NO establecer Content-Type manualmente
+// Axios detecta FormData automáticamente y establece el Content-Type correcto
+// con el boundary necesario para multipart/form-data
+
 // Variable para evitar múltiples refreshes simultáneos
 let isRefreshing = false;
 let failedQueue = [];
@@ -33,6 +37,14 @@ const processQueue = (error, token = null) => {
 // Interceptor de request para agregar token automáticamente y verificar expiración
 apiClient.interceptors.request.use(
   async (config) => {
+    // Si los datos son FormData, NO establecer Content-Type (axios lo hace automáticamente)
+    // Esto es crítico para que multer pueda parsear correctamente el FormData
+    if (config.data instanceof FormData) {
+      // Eliminar Content-Type si fue establecido manualmente
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
+    }
+    
     // Rutas públicas que no necesitan token
     const publicRoutes = [
       '/marcaciones/registrar-con-foto',
@@ -239,19 +251,17 @@ export const empleadosAPI = {
   obtenerPorId: (id) =>
     apiClient.get(`/empleados/${id}`),
   
-  crear: (datos) =>
-    apiClient.post('/empleados', datos, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    }),
+  crear: (datos) => {
+    // Cuando se envía FormData, NO establecer Content-Type manualmente
+    // Axios lo hace automáticamente con el boundary correcto
+    return apiClient.post('/empleados', datos);
+  },
   
-  actualizar: (id, datos) =>
-    apiClient.put(`/empleados/${id}`, datos, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    }),
+  actualizar: (id, datos) => {
+    // Cuando se envía FormData, NO establecer Content-Type manualmente
+    // Axios lo hace automáticamente con el boundary correcto
+    return apiClient.put(`/empleados/${id}`, datos);
+  },
   
   eliminar: (id) =>
     apiClient.delete(`/empleados/${id}`),

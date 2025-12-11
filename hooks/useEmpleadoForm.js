@@ -157,8 +157,54 @@ export function useEmpleadoForm(empleadoInicial = null) {
   };
 
   /**
-   * Construye un FormData con todos los campos del formulario
+   * Convierte un archivo a Base64
+   * @param {File} file - Archivo a convertir
+   * @returns {Promise<string>} - Promise que resuelve con el string base64
+   */
+  const convertirArchivoABase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        resolve(reader.result); // Esto incluye el prefijo data:image/...
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  };
+
+  /**
+   * Construye un objeto JSON con todos los campos del formulario (incluyendo foto en base64)
+   * @returns {Promise<Object>} - Promise que resuelve con el objeto listo para enviar
+   */
+  const construirDatos = async () => {
+    const datos = {
+      nombre: String(formData.nombre || '').trim(),
+      apellido: String(formData.apellido || '').trim(),
+      mail: String(formData.mail || '').trim(),
+      fecha_ingreso: String(formData.fecha_ingreso || '').trim(),
+      hora_normal: String(formData.hora_normal || '0'),
+      antiguedad: formData.antiguedad ?? 0,
+      dia_vacaciones: formData.dia_vacaciones ?? 14,
+      horas_vacaciones: formData.horas_vacaciones ?? 0
+    };
+
+    // Convertir foto a base64 si existe
+    if (archivoFoto) {
+      try {
+        datos.fotoBase64 = await convertirArchivoABase64(archivoFoto);
+      } catch (error) {
+        console.error('Error convirtiendo foto a base64:', error);
+        throw new Error('Error al procesar la imagen');
+      }
+    }
+
+    return datos;
+  };
+
+  /**
+   * Construye un FormData con todos los campos del formulario (LEGACY - mantener por compatibilidad)
    * @returns {FormData} - FormData listo para enviar
+   * @deprecated Usar construirDatos() en su lugar
    */
   const construirFormData = () => {
     const formDataToSend = new FormData();
@@ -211,7 +257,8 @@ export function useEmpleadoForm(empleadoInicial = null) {
     manejarCambioFoto,
     limpiarFoto,
     validarFormulario,
-    construirFormData,
+    construirFormData, // LEGACY
+    construirDatos, // NUEVO - usa base64
     obtenerValores
   };
 }

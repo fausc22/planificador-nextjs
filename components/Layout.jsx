@@ -80,24 +80,24 @@ export default function Layout({ children }) {
               {/* Usuario */}
               {user && (
                 <>
-                  <div className="hidden sm:flex items-center space-x-3">
-                    <div className="text-right">
+                <div className="hidden sm:flex items-center space-x-3">
+                  <div className="text-right">
                       <p className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[120px]">
-                        {user.nombre} {user.apellido}
-                      </p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">
-                        {user.rol}
-                      </p>
-                    </div>
-                    
-                    <button
-                      onClick={handleLogout}
-                      className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-                      title="Cerrar sesión"
-                    >
-                      <FiLogOut className="text-xl" />
-                    </button>
+                      {user.nombre} {user.apellido}
+                    </p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {user.rol}
+                    </p>
                   </div>
+                  
+                  <button
+                    onClick={handleLogout}
+                    className="p-2 rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                    title="Cerrar sesión"
+                  >
+                    <FiLogOut className="text-xl" />
+                  </button>
+                </div>
                   {/* Botón de logout en móvil (solo icono) */}
                   <button
                     onClick={handleLogout}

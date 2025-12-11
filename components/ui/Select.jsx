@@ -24,47 +24,47 @@ const Select = forwardRef(({
         </label>
       )}
       <div className="relative">
-        <select
-          ref={ref}
-          className={`
+      <select
+        ref={ref}
+        className={`
             w-full px-4 py-2.5 pr-10 border rounded-lg shadow-sm
             bg-white dark:bg-secondary-dark
-            text-gray-900 dark:text-white
-            border-gray-300 dark:border-gray-600
-            focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-            disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed
+          text-gray-900 dark:text-white
+          border-gray-300 dark:border-gray-600
+          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
+          disabled:bg-gray-100 dark:disabled:bg-gray-800 disabled:cursor-not-allowed
             transition-all duration-200
             appearance-none cursor-pointer
             ${error ? 'border-red-500 dark:border-red-500 focus:ring-red-500 focus:border-red-500' : ''}
-            ${className}
-          `}
+          ${className}
+        `}
           style={{
             backgroundImage: 'none',
             WebkitAppearance: 'none',
             MozAppearance: 'none',
             appearance: 'none',
           }}
-          {...props}
-        >
-          {placeholder && (
+        {...props}
+      >
+        {placeholder && (
             <option value="" disabled className="bg-white dark:bg-secondary-dark text-gray-500 dark:text-gray-400">
-              {placeholder}
-            </option>
-          )}
-          {options.length > 0 ? (
-            options.map((option) => (
-              <option
-                key={typeof option === 'object' ? option.value : option}
-                value={typeof option === 'object' ? option.value : option}
+            {placeholder}
+          </option>
+        )}
+        {options.length > 0 ? (
+          options.map((option) => (
+            <option
+              key={typeof option === 'object' ? option.value : option}
+              value={typeof option === 'object' ? option.value : option}
                 className="bg-white dark:bg-secondary-dark text-gray-900 dark:text-white"
-              >
-                {typeof option === 'object' ? option.label : option}
-              </option>
-            ))
-          ) : (
-            props.children
-          )}
-        </select>
+            >
+              {typeof option === 'object' ? option.label : option}
+            </option>
+          ))
+        ) : (
+          props.children
+        )}
+      </select>
         {/* Icono de flecha personalizado */}
         <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
           <FiChevronDown className={`text-gray-400 dark:text-gray-500 ${props.disabled ? 'opacity-50' : ''}`} size={20} />

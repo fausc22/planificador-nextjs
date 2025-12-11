@@ -53,9 +53,9 @@ export default function PlanificadorHeader({
             <div className="flex flex-1 sm:flex-initial items-center gap-2 min-w-0">
               <div className="flex-1 sm:flex-initial sm:min-w-[140px]">
                 <Select
-                  value={mesActual}
-                  onChange={(e) => onCambiarMesDirecto(parseInt(e.target.value))}
-                  disabled={loading}
+                value={mesActual}
+                onChange={(e) => onCambiarMesDirecto(parseInt(e.target.value))}
+                disabled={loading}
                   options={mesesOptions}
                   containerClassName="mb-0"
                   className="text-sm sm:text-base font-semibold"
@@ -64,9 +64,9 @@ export default function PlanificadorHeader({
 
               <div className="flex-1 sm:flex-initial sm:min-w-[100px]">
                 <Select
-                  value={anioActual}
-                  onChange={(e) => onCambiarAnio(parseInt(e.target.value))}
-                  disabled={loading}
+                value={anioActual}
+                onChange={(e) => onCambiarAnio(parseInt(e.target.value))}
+                disabled={loading}
                   options={aniosOptions}
                   containerClassName="mb-0"
                   className="text-sm sm:text-base font-semibold"

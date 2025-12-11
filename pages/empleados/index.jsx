@@ -30,7 +30,7 @@ export default function Empleados() {
     manejarCambioFoto,
     limpiarFoto,
     validarFormulario,
-    construirFormData,
+    construirDatos,
     obtenerValores
   } = useEmpleadoForm(null);
   
@@ -115,26 +115,26 @@ export default function Empleados() {
 
   const guardarEmpleado = async () => {
     try {
-      // Construir FormData usando el hook
-      const formDataToSend = construirFormData();
+      // Construir datos JSON con foto en base64 usando el hook
+      const datosEnviar = await construirDatos();
 
       // Si hay cambio de tarifa, agregar la opción seleccionada
       if (empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior)) {
-        formDataToSend.append('aplicar_cambio_tarifa', opcionAplicacion);
+        datosEnviar.aplicar_cambio_tarifa = opcionAplicacion;
       }
 
       // Log para debug (solo en desarrollo)
       if (process.env.NODE_ENV === 'development') {
         const valores = obtenerValores();
         console.log('📤 Enviando datos del empleado:', valores);
-        console.log('📤 FormData tiene foto:', !!archivoFoto);
+        console.log('📤 Tiene foto:', !!datosEnviar.fotoBase64);
       }
 
       if (empleadoEditando) {
-        const response = await empleadosAPI.actualizar(empleadoEditando.id, formDataToSend);
+        const response = await empleadosAPI.actualizar(empleadoEditando.id, datosEnviar);
         toast.success(response.data.message || 'Empleado actualizado exitosamente');
       } else {
-        const response = await empleadosAPI.crear(formDataToSend);
+        const response = await empleadosAPI.crear(datosEnviar);
         if (response.data.turnosGenerados) {
           toast.success('Empleado creado con turnos 2024-2027 generados');
         } else {
@@ -146,7 +146,7 @@ export default function Empleados() {
       cargarEmpleados();
     } catch (error) {
       console.error('Error al guardar empleado:', error);
-      toast.error(error.response?.data?.message || 'Error al guardar empleado');
+      toast.error(error.response?.data?.message || error.message || 'Error al guardar empleado');
     }
   };
 

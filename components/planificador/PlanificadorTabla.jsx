@@ -33,18 +33,18 @@ export default function PlanificadorTabla({
     <div className="overflow-x-auto -mx-4 sm:mx-0">
       <div className="inline-block min-w-full align-middle">
         <table className="w-full text-xs sm:text-sm">
-          <thead className="sticky top-0 bg-gray-100 dark:bg-secondary-dark z-10">
-            <tr>
+        <thead className="sticky top-0 bg-gray-100 dark:bg-secondary-dark z-10">
+          <tr>
               <th className="sticky left-0 bg-gray-100 dark:bg-secondary-dark px-2 sm:px-4 py-2 sm:py-3 text-left font-semibold z-20 border-r border-gray-300 dark:border-gray-600 text-xs sm:text-sm">
-                Fecha
-              </th>
-              {empleadosFiltrados.map((empleado) => (
+              Fecha
+            </th>
+            {empleadosFiltrados.map((empleado) => (
                 <th key={empleado} className="px-2 sm:px-3 py-2 sm:py-3 text-center font-semibold min-w-[80px] sm:min-w-[100px] text-xs sm:text-sm">
-                  {vistaMobile ? '' : empleado}
-                </th>
-              ))}
-            </tr>
-          </thead>
+                {vistaMobile ? '' : empleado}
+              </th>
+            ))}
+          </tr>
+        </thead>
         <tbody>
           {planificador.fechas.map((fecha) => (
             <tr

@@ -252,15 +252,15 @@ export const empleadosAPI = {
     apiClient.get(`/empleados/${id}`),
   
   crear: (datos) => {
-    // Cuando se envía FormData, NO establecer Content-Type manualmente
-    // Axios lo hace automáticamente con el boundary correcto
-    return apiClient.post('/empleados', datos);
+    // Usar endpoint base64 que acepta JSON con foto en base64
+    // Esto evita problemas con FormData y multer
+    return apiClient.post('/empleados/base64', datos);
   },
   
   actualizar: (id, datos) => {
-    // Cuando se envía FormData, NO establecer Content-Type manualmente
-    // Axios lo hace automáticamente con el boundary correcto
-    return apiClient.put(`/empleados/${id}`, datos);
+    // Usar endpoint base64 que acepta JSON con foto en base64
+    // Esto evita problemas con FormData y multer
+    return apiClient.put(`/empleados/${id}/base64`, datos);
   },
   
   eliminar: (id) =>

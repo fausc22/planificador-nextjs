@@ -123,17 +123,31 @@ export default function Empleados() {
         datosEnviar.aplicar_cambio_tarifa = opcionAplicacion;
       }
 
-      // Log para debug (solo en desarrollo)
-      if (process.env.NODE_ENV === 'development') {
-        const valores = obtenerValores();
-        console.log('📤 Enviando datos del empleado:', valores);
-        console.log('📤 Tiene foto:', !!datosEnviar.fotoBase64);
+      // Log para debug (siempre, para ver qué se envía en producción)
+      console.log('📤 [guardarEmpleado] Enviando datos del empleado');
+      console.log('📤 [guardarEmpleado] Es edición:', !!empleadoEditando);
+      console.log('📤 [guardarEmpleado] Datos keys:', Object.keys(datosEnviar));
+      console.log('📤 [guardarEmpleado] Tiene foto:', !!datosEnviar.fotoBase64);
+      console.log('📤 [guardarEmpleado] Datos sample:', {
+        nombre: datosEnviar.nombre,
+        apellido: datosEnviar.apellido,
+        mail: datosEnviar.mail,
+        hora_normal: datosEnviar.hora_normal
+      });
+
+      // Validar que los datos no sean FormData (deberían ser un objeto plano)
+      if (datosEnviar instanceof FormData) {
+        console.error('❌ [guardarEmpleado] ERROR: datosEnviar es FormData, debería ser objeto JSON');
+        toast.error('Error: Los datos deben ser JSON, no FormData');
+        return;
       }
 
       if (empleadoEditando) {
+        console.log(`📤 [guardarEmpleado] Llamando a actualizar con ID: ${empleadoEditando.id}`);
         const response = await empleadosAPI.actualizar(empleadoEditando.id, datosEnviar);
         toast.success(response.data.message || 'Empleado actualizado exitosamente');
       } else {
+        console.log('📤 [guardarEmpleado] Llamando a crear');
         const response = await empleadosAPI.crear(datosEnviar);
         if (response.data.turnosGenerados) {
           toast.success('Empleado creado con turnos 2024-2027 generados');
@@ -145,7 +159,9 @@ export default function Empleados() {
       cerrarModal();
       cargarEmpleados();
     } catch (error) {
-      console.error('Error al guardar empleado:', error);
+      console.error('❌ [guardarEmpleado] Error completo:', error);
+      console.error('❌ [guardarEmpleado] Error response:', error.response?.data);
+      console.error('❌ [guardarEmpleado] Error config:', error.config);
       toast.error(error.response?.data?.message || error.message || 'Error al guardar empleado');
     }
   };

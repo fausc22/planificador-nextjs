@@ -37,9 +37,36 @@ const processQueue = (error, token = null) => {
 // Interceptor de request para agregar token automáticamente y verificar expiración
 apiClient.interceptors.request.use(
   async (config) => {
-    // Si los datos son FormData, NO establecer Content-Type (axios lo hace automáticamente)
+    // Log para debugging (solo en desarrollo o cuando hay problemas)
+    if (config.url?.includes('empleados')) {
+      console.log('🔍 [interceptor] URL completa:', `${config.baseURL}${config.url}`);
+      console.log('🔍 [interceptor] URL relativa:', config.url);
+      console.log('🔍 [interceptor] Method:', config.method);
+      console.log('🔍 [interceptor] Data type:', config.data instanceof FormData ? 'FormData' : typeof config.data);
+      console.log('🔍 [interceptor] Data keys:', config.data instanceof FormData ? 'FormData' : Object.keys(config.data || {}));
+      console.log('🔍 [interceptor] Headers:', config.headers);
+    }
+    
+    // IMPORTANTE: Si la URL es /empleados/base64 o /empleados/:id/base64, asegurar que NO sea FormData
+    // y que el Content-Type sea application/json
+    if (config.url?.includes('/empleados') && (config.url?.includes('/base64') || config.url?.endsWith('/base64'))) {
+      if (config.data instanceof FormData) {
+        console.error('❌ [interceptor] ERROR: Se está intentando enviar FormData a endpoint base64');
+        console.error('❌ [interceptor] Esto no debería pasar. El endpoint base64 requiere JSON.');
+        // Convertir FormData a objeto (esto no debería ser necesario, pero por si acaso)
+        const obj = {};
+        config.data.forEach((value, key) => {
+          obj[key] = value;
+        });
+        config.data = obj;
+      }
+      // Asegurar Content-Type JSON
+      config.headers['Content-Type'] = 'application/json';
+    }
+    
+    // Si los datos son FormData (para otras rutas), NO establecer Content-Type (axios lo hace automáticamente)
     // Esto es crítico para que multer pueda parsear correctamente el FormData
-    if (config.data instanceof FormData) {
+    if (config.data instanceof FormData && !config.url?.includes('/base64')) {
       // Eliminar Content-Type si fue establecido manualmente
       delete config.headers['Content-Type'];
       delete config.headers['content-type'];
@@ -254,13 +281,37 @@ export const empleadosAPI = {
   crear: (datos) => {
     // Usar endpoint base64 que acepta JSON con foto en base64
     // Esto evita problemas con FormData y multer
-    return apiClient.post('/empleados/base64', datos);
+    console.log('📤 [empleadosAPI.crear] Enviando a /empleados/base64');
+    console.log('📤 [empleadosAPI.crear] URL completa:', `${API_URL}/empleados/base64`);
+    console.log('📤 [empleadosAPI.crear] Datos keys:', Object.keys(datos || {}));
+    console.log('📤 [empleadosAPI.crear] Tiene fotoBase64:', !!datos?.fotoBase64);
+    console.log('📤 [empleadosAPI.crear] Datos sample:', {
+      nombre: datos?.nombre,
+      apellido: datos?.apellido,
+      mail: datos?.mail,
+      hora_normal: datos?.hora_normal
+    });
+    // Asegurar que se envía como JSON, no FormData
+    return apiClient.post('/empleados/base64', datos, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
   },
   
   actualizar: (id, datos) => {
     // Usar endpoint base64 que acepta JSON con foto en base64
     // Esto evita problemas con FormData y multer
-    return apiClient.put(`/empleados/${id}/base64`, datos);
+    console.log(`📤 [empleadosAPI.actualizar] Enviando a /empleados/${id}/base64`);
+    console.log(`📤 [empleadosAPI.actualizar] URL completa: ${API_URL}/empleados/${id}/base64`);
+    console.log('📤 [empleadosAPI.actualizar] Datos keys:', Object.keys(datos || {}));
+    console.log('📤 [empleadosAPI.actualizar] Tiene fotoBase64:', !!datos?.fotoBase64);
+    // Asegurar que se envía como JSON, no FormData
+    return apiClient.put(`/empleados/${id}/base64`, datos, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
   },
   
   eliminar: (id) =>

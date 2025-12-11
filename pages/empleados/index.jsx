@@ -31,7 +31,6 @@ export default function Empleados() {
     limpiarFoto,
     validarFormulario,
     construirDatos,
-    obtenerFotoBase64,
     obtenerValores
   } = useEmpleadoForm(null);
   
@@ -116,54 +115,30 @@ export default function Empleados() {
 
   const guardarEmpleado = async () => {
     try {
-      // Construir datos sin foto
-      const datosEnviar = construirDatos();
+      // Construir datos con fotoBase64 incluido si existe
+      const datosEnviar = await construirDatos();
 
       // Si hay cambio de tarifa, agregar la opción seleccionada
       if (empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior)) {
         datosEnviar.aplicar_cambio_tarifa = opcionAplicacion;
       }
 
-      console.log('📤 [guardarEmpleado] Enviando datos del empleado (sin foto)');
+      console.log('📤 [guardarEmpleado] Enviando datos del empleado (JSON con fotoBase64 si existe)');
       console.log('📤 [guardarEmpleado] Es edición:', !!empleadoEditando);
-      console.log('📤 [guardarEmpleado] Tiene foto para subir:', !!archivoFoto);
+      console.log('📤 [guardarEmpleado] Tiene fotoBase64:', !!datosEnviar.fotoBase64);
 
-      let empleadoId;
-
-      // Paso 1: Crear o actualizar empleado (solo datos)
+      // Crear o actualizar empleado (todo en un solo request JSON)
       if (empleadoEditando) {
         console.log(`📤 [guardarEmpleado] Actualizando empleado ID: ${empleadoEditando.id}`);
         const response = await empleadosAPI.actualizar(empleadoEditando.id, datosEnviar);
-        empleadoId = empleadoEditando.id;
         toast.success(response.data.message || 'Empleado actualizado exitosamente');
       } else {
         console.log('📤 [guardarEmpleado] Creando nuevo empleado');
         const response = await empleadosAPI.crear(datosEnviar);
-        empleadoId = response.data.empleadoId;
         if (response.data.turnosGenerados) {
           toast.success('Empleado creado con turnos 2024-2027 generados');
         } else {
           toast.success('Empleado creado exitosamente');
-        }
-      }
-
-      // Paso 2: Subir foto si existe (por separado)
-      if (archivoFoto) {
-        try {
-          console.log('📤 [guardarEmpleado] Subiendo foto por separado');
-          const fotoBase64 = await obtenerFotoBase64();
-          
-          if (empleadoEditando) {
-            await empleadosAPI.actualizarFoto(empleadoId, fotoBase64);
-            console.log('✅ Foto actualizada exitosamente');
-          } else {
-            await empleadosAPI.subirFoto(empleadoId, fotoBase64);
-            console.log('✅ Foto subida exitosamente');
-          }
-        } catch (errorFoto) {
-          console.error('⚠️ Error subiendo foto:', errorFoto);
-          // No fallar todo si solo falla la foto
-          toast.error('Empleado guardado pero hubo un error al subir la foto');
         }
       }
       

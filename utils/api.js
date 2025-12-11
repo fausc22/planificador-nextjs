@@ -279,8 +279,9 @@ export const empleadosAPI = {
     apiClient.get(`/empleados/${id}`),
   
   crear: (datos) => {
-    // Crear empleado sin foto (solo datos)
+    // Crear empleado (puede incluir fotoBase64 en el mismo objeto JSON)
     console.log('📤 [empleadosAPI.crear] Enviando datos a /empleados');
+    console.log('📤 [empleadosAPI.crear] Tiene fotoBase64:', !!datos?.fotoBase64);
     return apiClient.post('/empleados', datos, {
       headers: {
         'Content-Type': 'application/json'
@@ -288,30 +289,11 @@ export const empleadosAPI = {
     });
   },
   
-  subirFoto: (id, fotoBase64) => {
-    // Subir foto por separado después de crear el empleado
-    console.log('📤 [empleadosAPI.subirFoto] Subiendo foto para empleado:', id);
-    return apiClient.post(`/empleados/${id}/foto`, { fotoBase64 }, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  },
-  
   actualizar: (id, datos) => {
-    // Actualizar empleado sin foto (solo datos)
-    console.log(`📤 [empleadosAPI.actualizar] Actualizando datos de empleado: ${id}`);
+    // Actualizar empleado (puede incluir fotoBase64 en el mismo objeto JSON)
+    console.log(`📤 [empleadosAPI.actualizar] Actualizando empleado: ${id}`);
+    console.log('📤 [empleadosAPI.actualizar] Tiene fotoBase64:', !!datos?.fotoBase64);
     return apiClient.put(`/empleados/${id}`, datos, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
-  },
-  
-  actualizarFoto: (id, fotoBase64) => {
-    // Actualizar foto por separado
-    console.log('📤 [empleadosAPI.actualizarFoto] Actualizando foto para empleado:', id);
-    return apiClient.put(`/empleados/${id}/foto`, { fotoBase64 }, {
       headers: {
         'Content-Type': 'application/json'
       }

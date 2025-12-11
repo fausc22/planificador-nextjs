@@ -173,11 +173,11 @@ export function useEmpleadoForm(empleadoInicial = null) {
   };
 
   /**
-   * Construye un objeto JSON con todos los campos del formulario (SIN foto)
-   * @returns {Object} - Objeto listo para enviar (solo datos, sin foto)
+   * Construye un objeto JSON con todos los campos del formulario (incluyendo fotoBase64 si existe)
+   * @returns {Promise<Object>} - Promise que resuelve con el objeto listo para enviar
    */
-  const construirDatos = () => {
-    return {
+  const construirDatos = async () => {
+    const datos = {
       nombre: String(formData.nombre || '').trim(),
       apellido: String(formData.apellido || '').trim(),
       mail: String(formData.mail || '').trim(),
@@ -187,23 +187,18 @@ export function useEmpleadoForm(empleadoInicial = null) {
       dia_vacaciones: formData.dia_vacaciones ?? 14,
       horas_vacaciones: formData.horas_vacaciones ?? 0
     };
-  };
 
-  /**
-   * Convierte la foto a base64 si existe
-   * @returns {Promise<string|null>} - Promise que resuelve con el string base64 o null
-   */
-  const obtenerFotoBase64 = async () => {
-    if (!archivoFoto) {
-      return null;
+    // Convertir foto a base64 si existe
+    if (archivoFoto) {
+      try {
+        datos.fotoBase64 = await convertirArchivoABase64(archivoFoto);
+      } catch (error) {
+        console.error('Error convirtiendo foto a base64:', error);
+        throw new Error('Error al procesar la imagen');
+      }
     }
-    
-    try {
-      return await convertirArchivoABase64(archivoFoto);
-    } catch (error) {
-      console.error('Error convirtiendo foto a base64:', error);
-      throw new Error('Error al procesar la imagen');
-    }
+
+    return datos;
   };
 
   /**
@@ -263,8 +258,7 @@ export function useEmpleadoForm(empleadoInicial = null) {
     limpiarFoto,
     validarFormulario,
     construirFormData, // LEGACY
-    construirDatos, // Datos sin foto
-    obtenerFotoBase64, // Foto en base64 por separado
+    construirDatos, // Datos con fotoBase64 incluido si existe
     obtenerValores
   };
 }

@@ -31,6 +31,7 @@ export default function Empleados() {
     limpiarFoto,
     validarFormulario,
     construirDatos,
+    obtenerFotoBase64,
     obtenerValores
   } = useEmpleadoForm(null);
   
@@ -115,44 +116,54 @@ export default function Empleados() {
 
   const guardarEmpleado = async () => {
     try {
-      // Construir datos JSON con foto en base64 usando el hook
-      const datosEnviar = await construirDatos();
+      // Construir datos sin foto
+      const datosEnviar = construirDatos();
 
       // Si hay cambio de tarifa, agregar la opción seleccionada
       if (empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior)) {
         datosEnviar.aplicar_cambio_tarifa = opcionAplicacion;
       }
 
-      // Log para debug (siempre, para ver qué se envía en producción)
-      console.log('📤 [guardarEmpleado] Enviando datos del empleado');
+      console.log('📤 [guardarEmpleado] Enviando datos del empleado (sin foto)');
       console.log('📤 [guardarEmpleado] Es edición:', !!empleadoEditando);
-      console.log('📤 [guardarEmpleado] Datos keys:', Object.keys(datosEnviar));
-      console.log('📤 [guardarEmpleado] Tiene foto:', !!datosEnviar.fotoBase64);
-      console.log('📤 [guardarEmpleado] Datos sample:', {
-        nombre: datosEnviar.nombre,
-        apellido: datosEnviar.apellido,
-        mail: datosEnviar.mail,
-        hora_normal: datosEnviar.hora_normal
-      });
+      console.log('📤 [guardarEmpleado] Tiene foto para subir:', !!archivoFoto);
 
-      // Validar que los datos no sean FormData (deberían ser un objeto plano)
-      if (datosEnviar instanceof FormData) {
-        console.error('❌ [guardarEmpleado] ERROR: datosEnviar es FormData, debería ser objeto JSON');
-        toast.error('Error: Los datos deben ser JSON, no FormData');
-        return;
-      }
+      let empleadoId;
 
+      // Paso 1: Crear o actualizar empleado (solo datos)
       if (empleadoEditando) {
-        console.log(`📤 [guardarEmpleado] Llamando a actualizar con ID: ${empleadoEditando.id}`);
+        console.log(`📤 [guardarEmpleado] Actualizando empleado ID: ${empleadoEditando.id}`);
         const response = await empleadosAPI.actualizar(empleadoEditando.id, datosEnviar);
+        empleadoId = empleadoEditando.id;
         toast.success(response.data.message || 'Empleado actualizado exitosamente');
       } else {
-        console.log('📤 [guardarEmpleado] Llamando a crear');
+        console.log('📤 [guardarEmpleado] Creando nuevo empleado');
         const response = await empleadosAPI.crear(datosEnviar);
+        empleadoId = response.data.empleadoId;
         if (response.data.turnosGenerados) {
           toast.success('Empleado creado con turnos 2024-2027 generados');
         } else {
           toast.success('Empleado creado exitosamente');
+        }
+      }
+
+      // Paso 2: Subir foto si existe (por separado)
+      if (archivoFoto) {
+        try {
+          console.log('📤 [guardarEmpleado] Subiendo foto por separado');
+          const fotoBase64 = await obtenerFotoBase64();
+          
+          if (empleadoEditando) {
+            await empleadosAPI.actualizarFoto(empleadoId, fotoBase64);
+            console.log('✅ Foto actualizada exitosamente');
+          } else {
+            await empleadosAPI.subirFoto(empleadoId, fotoBase64);
+            console.log('✅ Foto subida exitosamente');
+          }
+        } catch (errorFoto) {
+          console.error('⚠️ Error subiendo foto:', errorFoto);
+          // No fallar todo si solo falla la foto
+          toast.error('Empleado guardado pero hubo un error al subir la foto');
         }
       }
       
@@ -161,7 +172,6 @@ export default function Empleados() {
     } catch (error) {
       console.error('❌ [guardarEmpleado] Error completo:', error);
       console.error('❌ [guardarEmpleado] Error response:', error.response?.data);
-      console.error('❌ [guardarEmpleado] Error config:', error.config);
       toast.error(error.response?.data?.message || error.message || 'Error al guardar empleado');
     }
   };

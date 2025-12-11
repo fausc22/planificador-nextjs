@@ -173,11 +173,11 @@ export function useEmpleadoForm(empleadoInicial = null) {
   };
 
   /**
-   * Construye un objeto JSON con todos los campos del formulario (incluyendo foto en base64)
-   * @returns {Promise<Object>} - Promise que resuelve con el objeto listo para enviar
+   * Construye un objeto JSON con todos los campos del formulario (SIN foto)
+   * @returns {Object} - Objeto listo para enviar (solo datos, sin foto)
    */
-  const construirDatos = async () => {
-    const datos = {
+  const construirDatos = () => {
+    return {
       nombre: String(formData.nombre || '').trim(),
       apellido: String(formData.apellido || '').trim(),
       mail: String(formData.mail || '').trim(),
@@ -187,18 +187,23 @@ export function useEmpleadoForm(empleadoInicial = null) {
       dia_vacaciones: formData.dia_vacaciones ?? 14,
       horas_vacaciones: formData.horas_vacaciones ?? 0
     };
+  };
 
-    // Convertir foto a base64 si existe
-    if (archivoFoto) {
-      try {
-        datos.fotoBase64 = await convertirArchivoABase64(archivoFoto);
-      } catch (error) {
-        console.error('Error convirtiendo foto a base64:', error);
-        throw new Error('Error al procesar la imagen');
-      }
+  /**
+   * Convierte la foto a base64 si existe
+   * @returns {Promise<string|null>} - Promise que resuelve con el string base64 o null
+   */
+  const obtenerFotoBase64 = async () => {
+    if (!archivoFoto) {
+      return null;
     }
-
-    return datos;
+    
+    try {
+      return await convertirArchivoABase64(archivoFoto);
+    } catch (error) {
+      console.error('Error convirtiendo foto a base64:', error);
+      throw new Error('Error al procesar la imagen');
+    }
   };
 
   /**
@@ -258,7 +263,8 @@ export function useEmpleadoForm(empleadoInicial = null) {
     limpiarFoto,
     validarFormulario,
     construirFormData, // LEGACY
-    construirDatos, // NUEVO - usa base64
+    construirDatos, // Datos sin foto
+    obtenerFotoBase64, // Foto en base64 por separado
     obtenerValores
   };
 }

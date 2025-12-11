@@ -279,20 +279,19 @@ export const empleadosAPI = {
     apiClient.get(`/empleados/${id}`),
   
   crear: (datos) => {
-    // Usar endpoint base64 que acepta JSON con foto en base64
-    // Esto evita problemas con FormData y multer
-    console.log('📤 [empleadosAPI.crear] Enviando a /empleados/base64');
-    console.log('📤 [empleadosAPI.crear] URL completa:', `${API_URL}/empleados/base64`);
-    console.log('📤 [empleadosAPI.crear] Datos keys:', Object.keys(datos || {}));
-    console.log('📤 [empleadosAPI.crear] Tiene fotoBase64:', !!datos?.fotoBase64);
-    console.log('📤 [empleadosAPI.crear] Datos sample:', {
-      nombre: datos?.nombre,
-      apellido: datos?.apellido,
-      mail: datos?.mail,
-      hora_normal: datos?.hora_normal
+    // Crear empleado sin foto (solo datos)
+    console.log('📤 [empleadosAPI.crear] Enviando datos a /empleados');
+    return apiClient.post('/empleados', datos, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
     });
-    // Asegurar que se envía como JSON, no FormData
-    return apiClient.post('/empleados/base64', datos, {
+  },
+  
+  subirFoto: (id, fotoBase64) => {
+    // Subir foto por separado después de crear el empleado
+    console.log('📤 [empleadosAPI.subirFoto] Subiendo foto para empleado:', id);
+    return apiClient.post(`/empleados/${id}/foto`, { fotoBase64 }, {
       headers: {
         'Content-Type': 'application/json'
       }
@@ -300,14 +299,19 @@ export const empleadosAPI = {
   },
   
   actualizar: (id, datos) => {
-    // Usar endpoint base64 que acepta JSON con foto en base64
-    // Esto evita problemas con FormData y multer
-    console.log(`📤 [empleadosAPI.actualizar] Enviando a /empleados/${id}/base64`);
-    console.log(`📤 [empleadosAPI.actualizar] URL completa: ${API_URL}/empleados/${id}/base64`);
-    console.log('📤 [empleadosAPI.actualizar] Datos keys:', Object.keys(datos || {}));
-    console.log('📤 [empleadosAPI.actualizar] Tiene fotoBase64:', !!datos?.fotoBase64);
-    // Asegurar que se envía como JSON, no FormData
-    return apiClient.put(`/empleados/${id}/base64`, datos, {
+    // Actualizar empleado sin foto (solo datos)
+    console.log(`📤 [empleadosAPI.actualizar] Actualizando datos de empleado: ${id}`);
+    return apiClient.put(`/empleados/${id}`, datos, {
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+  },
+  
+  actualizarFoto: (id, fotoBase64) => {
+    // Actualizar foto por separado
+    console.log('📤 [empleadosAPI.actualizarFoto] Actualizando foto para empleado:', id);
+    return apiClient.put(`/empleados/${id}/foto`, { fotoBase64 }, {
       headers: {
         'Content-Type': 'application/json'
       }

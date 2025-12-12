@@ -1,5 +1,6 @@
 // hooks/useEmpleadoForm.js - Hook personalizado para manejar el formulario de empleados
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { crearEmpleadoSchema, actualizarEmpleadoSchema } from '../validations/empleadoSchemas';
 
 const INITIAL_FORM_DATA = {
   nombre: '',
@@ -36,35 +37,30 @@ export function useEmpleadoForm(empleadoInicial = null) {
 
   const [fotoPreview, setFotoPreview] = useState(null);
   const [archivoFoto, setArchivoFoto] = useState(null);
+  const [errors, setErrors] = useState({});
 
   /**
    * Actualiza un campo del formulario
-   * @param {string} campo - Nombre del campo
-   * @param {any} valor - Nuevo valor
    */
-  const actualizarCampo = (campo, valor) => {
+  const actualizarCampo = useCallback((campo, valor) => {
     setFormData(prev => ({
       ...prev,
       [campo]: valor
     }));
-  };
-
-  /**
-   * Actualiza múltiples campos del formulario
-   * @param {Object} campos - Objeto con los campos a actualizar
-   */
-  const actualizarCampos = (campos) => {
-    setFormData(prev => ({
-      ...prev,
-      ...campos
-    }));
-  };
+    // Limpiar error del campo cuando se actualiza
+    if (errors[campo]) {
+      setErrors(prev => {
+        const nuevosErrores = { ...prev };
+        delete nuevosErrores[campo];
+        return nuevosErrores;
+      });
+    }
+  }, [errors]);
 
   /**
    * Resetea el formulario a los valores iniciales
-   * @param {Object} empleado - Empleado para cargar datos (opcional)
    */
-  const resetearFormulario = (empleado = null) => {
+  const resetearFormulario = useCallback((empleado = null) => {
     if (empleado) {
       setFormData({
         nombre: empleado.nombre || '',
@@ -88,14 +84,13 @@ export function useEmpleadoForm(empleadoInicial = null) {
       setFotoPreview(null);
     }
     setArchivoFoto(null);
-  };
+    setErrors({});
+  }, []);
 
   /**
    * Maneja el cambio de foto
-   * @param {File} archivo - Archivo de imagen
-   * @param {Function} onError - Callback de error
    */
-  const manejarCambioFoto = (archivo, onError = null) => {
+  const manejarCambioFoto = useCallback((archivo, onError = null) => {
     if (!archivo) return;
 
     // Validar tamaño (5MB)
@@ -117,69 +112,53 @@ export function useEmpleadoForm(empleadoInicial = null) {
       }
     };
     reader.readAsDataURL(archivo);
-  };
+  }, []);
 
   /**
    * Limpia la foto
    */
-  const limpiarFoto = () => {
+  const limpiarFoto = useCallback(() => {
     setArchivoFoto(null);
     setFotoPreview(null);
-  };
+  }, []);
 
   /**
-   * Valida los campos obligatorios del formulario
-   * @returns {Object} - { valido: boolean, errores: string[] }
+   * Valida el formulario con Zod
    */
-  const validarFormulario = () => {
-    const errores = [];
-
-    if (!formData.nombre || formData.nombre.trim() === '') {
-      errores.push('El nombre es obligatorio');
-    }
-    if (!formData.apellido || formData.apellido.trim() === '') {
-      errores.push('El apellido es obligatorio');
-    }
-    if (!formData.mail || formData.mail.trim() === '') {
-      errores.push('El email es obligatorio');
-    }
-    if (!formData.fecha_ingreso || formData.fecha_ingreso.trim() === '') {
-      errores.push('La fecha de ingreso es obligatoria');
-    }
-    if (!formData.hora_normal || formData.hora_normal === '') {
-      errores.push('La tarifa por hora es obligatoria');
-    }
-
-    return {
-      valido: errores.length === 0,
-      errores
-    };
-  };
-
-  /**
-   * Convierte un archivo a Base64
-   * @param {File} file - Archivo a convertir
-   * @returns {Promise<string>} - Promise que resuelve con el string base64
-   */
-  const convertirArchivoABase64 = (file) => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        resolve(reader.result); // Esto incluye el prefijo data:image/...
+  const validarFormulario = useCallback((esEdicion = false) => {
+    try {
+      if (esEdicion) {
+        actualizarEmpleadoSchema.parse(formData);
+      } else {
+        crearEmpleadoSchema.parse(formData);
+      }
+      setErrors({});
+      return { valido: true, errores: [] };
+    } catch (error) {
+      if (error.name === 'ZodError') {
+        const erroresFormateados = {};
+        error.errors.forEach(err => {
+          const path = err.path[0];
+          erroresFormateados[path] = err.message;
+        });
+        setErrors(erroresFormateados);
+        return {
+          valido: false,
+          errores: error.errors.map(e => e.message)
+        };
+      }
+      return {
+        valido: false,
+        errores: ['Error de validación']
       };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
-    });
-  };
+    }
+  }, [formData]);
 
   /**
-   * Construye un objeto JSON con todos los campos del formulario
-   * PATRÓN IDÉNTICO A LOGUEOS - objeto simple y directo
-   * @returns {Object} - Objeto listo para enviar
+   * Obtiene los datos del formulario listos para enviar
    */
-  const construirDatos = () => {
-    // Construir objeto exactamente como en logueos - simple y directo
-    const datos = {
+  const obtenerDatos = useCallback(() => {
+    return {
       nombre: formData.nombre || '',
       apellido: formData.apellido || '',
       mail: formData.mail || '',
@@ -189,74 +168,18 @@ export function useEmpleadoForm(empleadoInicial = null) {
       dia_vacaciones: formData.dia_vacaciones || 14,
       horas_vacaciones: formData.horas_vacaciones || 0
     };
-
-    console.log('📤 [construirDatos] Datos construidos:', datos);
-    console.log('📤 [construirDatos] formData original:', formData);
-    return datos;
-  };
-
-  /**
-   * Construye un FormData con todos los campos del formulario (LEGACY - mantener por compatibilidad)
-   * @returns {FormData} - FormData listo para enviar
-   * @deprecated Usar construirDatos() en su lugar
-   */
-  const construirFormData = () => {
-    const formDataToSend = new FormData();
-
-    // Campos obligatorios - asegurar que siempre tengan un valor
-    formDataToSend.append('nombre', String(formData.nombre || '').trim());
-    formDataToSend.append('apellido', String(formData.apellido || '').trim());
-    formDataToSend.append('mail', String(formData.mail || '').trim());
-    formDataToSend.append('fecha_ingreso', String(formData.fecha_ingreso || '').trim());
-    formDataToSend.append('hora_normal', String(formData.hora_normal || '0'));
-
-    // Campos opcionales
-    formDataToSend.append('antiguedad', String(formData.antiguedad ?? 0));
-    formDataToSend.append('dia_vacaciones', String(formData.dia_vacaciones ?? 14));
-    formDataToSend.append('horas_vacaciones', String(formData.horas_vacaciones ?? 0));
-
-    // Foto si existe
-    if (archivoFoto) {
-      formDataToSend.append('foto_perfil', archivoFoto);
-    }
-
-    return formDataToSend;
-  };
-
-  /**
-   * Obtiene los valores del formulario como objeto plano (sin FormData)
-   * Útil para logging o validación
-   * @returns {Object} - Objeto con los valores del formulario
-   */
-  const obtenerValores = () => {
-    return {
-      nombre: String(formData.nombre || '').trim(),
-      apellido: String(formData.apellido || '').trim(),
-      mail: String(formData.mail || '').trim(),
-      fecha_ingreso: String(formData.fecha_ingreso || '').trim(),
-      hora_normal: String(formData.hora_normal || '0'),
-      antiguedad: formData.antiguedad ?? 0,
-      dia_vacaciones: formData.dia_vacaciones ?? 14,
-      horas_vacaciones: formData.horas_vacaciones ?? 0
-    };
-  };
+  }, [formData]);
 
   return {
     formData,
     fotoPreview,
     archivoFoto,
+    errors,
     actualizarCampo,
-    actualizarCampos,
     resetearFormulario,
     manejarCambioFoto,
     limpiarFoto,
     validarFormulario,
-    construirFormData, // LEGACY
-    construirDatos, // Datos con fotoBase64 incluido si existe
-    obtenerValores
+    obtenerDatos
   };
 }
-
-
-
-

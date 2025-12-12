@@ -12,15 +12,6 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
   timeout: 30000, // 30 segundos
-  // Asegurar que axios serialice los datos como JSON
-  transformRequest: [(data, headers) => {
-    // Si los datos son un objeto (no FormData), serializar como JSON
-    if (data && typeof data === 'object' && !(data instanceof FormData)) {
-      headers['Content-Type'] = 'application/json';
-      return JSON.stringify(data);
-    }
-    return data;
-  }]
 });
 
 // Nota: Cuando se envía FormData, NO establecer Content-Type manualmente
@@ -57,11 +48,14 @@ apiClient.interceptors.request.use(
       console.log('🔍 [interceptor] Data completo:', config.data);
     }
     
-    // CRÍTICO: Para rutas de empleados, SIEMPRE usar JSON (no FormData)
-    // Asegurar que NO sea FormData y que el Content-Type sea application/json
-    if (config.url?.includes('/empleados') && !config.url?.includes('/uploads')) {
+    // CRÍTICO: Para rutas de empleados, usar JSON (excepto para /foto que usa FormData)
+    // La ruta /empleados/:id/foto permite FormData para subir fotos
+    const esRutaFoto = config.url?.includes('/empleados') && config.url?.includes('/foto');
+    
+    if (config.url?.includes('/empleados') && !config.url?.includes('/uploads') && !esRutaFoto) {
+      // Rutas normales de empleados: usar JSON
       if (config.data instanceof FormData) {
-        console.error('❌ [interceptor] ERROR: Se está intentando enviar FormData a endpoint de empleados');
+        console.error('❌ [interceptor] ERROR: Se está intentando enviar FormData a endpoint de empleados (excepto /foto)');
         console.error('❌ [interceptor] Convirtiendo FormData a objeto JSON');
         // Convertir FormData a objeto
         const obj = {};
@@ -70,14 +64,25 @@ apiClient.interceptors.request.use(
         });
         config.data = obj;
       }
-      // SIEMPRE establecer Content-Type JSON para empleados
+      
+      // CRÍTICO: Establecer Content-Type en múltiples formas y asegurar serialización
+      // Eliminar cualquier Content-Type previo que pueda estar mal
+      delete config.headers['Content-Type'];
+      delete config.headers['content-type'];
+      
+      // Establecer Content-Type explícitamente
       config.headers['Content-Type'] = 'application/json';
-      console.log('✅ [interceptor] Content-Type establecido para empleados:', config.headers['Content-Type']);
+      
+      // Si los datos son un objeto, serializarlos como JSON explícitamente
+      // Esto es crítico porque axios puede no serializar correctamente sin Content-Type
+      if (config.data && typeof config.data === 'object' && !(config.data instanceof FormData)) {
+        config.data = JSON.stringify(config.data);
+      }
     }
     
-    // Si los datos son FormData (para otras rutas que NO sean empleados), NO establecer Content-Type (axios lo hace automáticamente)
+    // Si los datos son FormData (para rutas de foto o otras rutas), NO establecer Content-Type (axios lo hace automáticamente)
     // Esto es crítico para que multer pueda parsear correctamente el FormData
-    if (config.data instanceof FormData && !config.url?.includes('/empleados')) {
+    if (config.data instanceof FormData && (esRutaFoto || !config.url?.includes('/empleados'))) {
       // Eliminar Content-Type si fue establecido manualmente
       delete config.headers['Content-Type'];
       delete config.headers['content-type'];
@@ -295,25 +300,10 @@ export const empleadosAPI = {
     apiClient.get(`/empleados/${id}`),
   
   crear: (datos) => {
-    // Crear empleado - igual que logueos, usar apiClient.post directamente
-    console.log('📤 [empleadosAPI.crear] Datos a enviar:', datos);
-    console.log('📤 [empleadosAPI.crear] Tipo de datos:', typeof datos);
-    console.log('📤 [empleadosAPI.crear] Es objeto:', datos instanceof Object);
-    console.log('📤 [empleadosAPI.crear] Keys:', Object.keys(datos || {}));
-    console.log('📤 [empleadosAPI.crear] JSON.stringify:', JSON.stringify(datos));
-    
-    // Asegurar que los datos sean un objeto válido
-    if (!datos || typeof datos !== 'object') {
-      console.error('❌ [empleadosAPI.crear] ERROR: datos no es un objeto válido');
-      throw new Error('Los datos deben ser un objeto válido');
-    }
-    
     return apiClient.post('/empleados', datos);
   },
   
   actualizar: (id, datos) => {
-    // Actualizar empleado - igual que logueos, usar apiClient.put directamente
-    console.log(`📤 [empleadosAPI.actualizar] Actualizando empleado ${id}:`, datos);
     return apiClient.put(`/empleados/${id}`, datos);
   },
   

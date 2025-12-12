@@ -1,16 +1,13 @@
-// pages/empleados/index.jsx - Gestión completa de empleados
-import { useState, useEffect } from 'react';
+// pages/empleados/index.jsx - Gestión completa de empleados (Refactorizado)
+import { useState, useMemo } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
-import { empleadosAPI, apiClient } from '../../utils/api';
+import { useEmpleados } from '../../hooks/useEmpleados';
 import { useEmpleadoForm } from '../../hooks/useEmpleadoForm';
 import Select from '../../components/ui/Select';
 import { FiPlus, FiEdit, FiTrash2, FiSearch, FiUser, FiMail, FiCalendar, FiDollarSign, FiX, FiSave, FiUpload, FiGrid, FiList, FiAlertCircle, FiCheck } from 'react-icons/fi';
-import toast from 'react-hot-toast';
 
 export default function Empleados() {
-  const [empleados, setEmpleados] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [ordenarPor, setOrdenarPor] = useState('nombre');
   const [ordenDireccion, setOrdenDireccion] = useState('asc');
@@ -20,44 +17,34 @@ export default function Empleados() {
   const [modalAbierto, setModalAbierto] = useState(false);
   const [empleadoEditando, setEmpleadoEditando] = useState(null);
   
+  // Hook para manejar empleados
+  const {
+    empleados,
+    loading,
+    crearEmpleado,
+    actualizarEmpleado,
+    actualizarFotoEmpleado,
+    eliminarEmpleado
+  } = useEmpleados();
+  
   // Hook personalizado para manejar el formulario
   const {
     formData,
     fotoPreview,
     archivoFoto,
+    errors,
     actualizarCampo,
     resetearFormulario,
     manejarCambioFoto,
     limpiarFoto,
     validarFormulario,
-    construirDatos,
-    obtenerValores
+    obtenerDatos
   } = useEmpleadoForm(null);
   
   // Modal para opciones de cambio de tarifa
   const [modalCambioTarifa, setModalCambioTarifa] = useState(false);
   const [horaNormalAnterior, setHoraNormalAnterior] = useState(null);
   const [opcionAplicacion, setOpcionAplicacion] = useState('desde_hoy');
-
-  useEffect(() => {
-    cargarEmpleados();
-  }, []);
-
-  const cargarEmpleados = async () => {
-    try {
-      setLoading(true);
-      const response = await empleadosAPI.obtenerTodos();
-      
-      if (response.data.success) {
-        setEmpleados(response.data.empleados || []);
-      }
-    } catch (error) {
-      console.error('Error al cargar empleados:', error);
-      toast.error('Error al cargar empleados');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const abrirModal = (empleado = null) => {
     if (empleado) {
@@ -88,7 +75,7 @@ export default function Empleados() {
     const file = e.target.files[0];
     if (file) {
       manejarCambioFoto(file, (error) => {
-        toast.error(error);
+        // El toast se maneja en el hook
       });
     }
   };
@@ -101,9 +88,8 @@ export default function Empleados() {
   const guardarEmpleado = async () => {
     try {
       // Validar formulario primero
-      const validacion = validarFormulario();
+      const validacion = validarFormulario(!!empleadoEditando);
       if (!validacion.valido) {
-        toast.error(validacion.errores[0] || 'Completa todos los campos obligatorios');
         return;
       }
 
@@ -113,47 +99,30 @@ export default function Empleados() {
         return;
       }
 
-      // Construir datos EXACTAMENTE como en logueos - objeto simple y directo
-      // Usar los valores directamente del formData sin conversiones complejas
-      const datosEnviar = {
-        nombre: formData.nombre,
-        apellido: formData.apellido,
-        mail: formData.mail,
-        fecha_ingreso: formData.fecha_ingreso,
-        hora_normal: formData.hora_normal,
-        antiguedad: formData.antiguedad || 0,
-        dia_vacaciones: formData.dia_vacaciones || 14,
-        horas_vacaciones: formData.horas_vacaciones || 0
-      };
+      // Obtener datos del formulario
+      const datosEnviar = obtenerDatos();
 
       // Si hay cambio de tarifa, agregar la opción seleccionada
       if (empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior)) {
         datosEnviar.aplicar_cambio_tarifa = opcionAplicacion;
       }
 
-      console.log('📤 [guardarEmpleado] formData original:', formData);
-      console.log('📤 [guardarEmpleado] datosEnviar construido:', datosEnviar);
-      console.log('📤 [guardarEmpleado] JSON.stringify:', JSON.stringify(datosEnviar));
-
-      // Crear o actualizar empleado - usar apiClient directamente como en logueos
+      // Crear o actualizar empleado
       if (empleadoEditando) {
-        const response = await apiClient.put(`/empleados/${empleadoEditando.id}`, datosEnviar);
-        toast.success(response.data.message || 'Empleado actualizado exitosamente');
-      } else {
-        const response = await apiClient.post('/empleados', datosEnviar);
-        if (response.data.turnosGenerados) {
-          toast.success('Empleado creado con turnos 2024-2027 generados');
-        } else {
-          toast.success('Empleado creado exitosamente');
+        await actualizarEmpleado(empleadoEditando.id, datosEnviar);
+        
+        // Si hay foto nueva, actualizarla por separado
+        if (archivoFoto) {
+          await actualizarFotoEmpleado(empleadoEditando.id, archivoFoto);
         }
+      } else {
+        await crearEmpleado(datosEnviar);
       }
       
       cerrarModal();
-      cargarEmpleados();
     } catch (error) {
-      console.error('❌ [guardarEmpleado] Error completo:', error);
-      console.error('❌ [guardarEmpleado] Error response:', error.response?.data);
-      toast.error(error.response?.data?.message || error.message || 'Error al guardar empleado');
+      // Los errores ya se manejan en los hooks
+      console.error('Error al guardar empleado:', error);
     }
   };
 
@@ -163,11 +132,10 @@ export default function Empleados() {
     }
 
     try {
-      await empleadosAPI.eliminar(id);
-      toast.success('Empleado eliminado exitosamente');
-      cargarEmpleados();
+      await eliminarEmpleado(id);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Error al eliminar empleado');
+      // El error ya se maneja en el hook
+      console.error('Error al eliminar empleado:', error);
     }
   };
 
@@ -180,27 +148,27 @@ export default function Empleados() {
     }
   };
 
-  const empleadosFiltrados = empleados
-    .filter(emp =>
-    emp.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      emp.apellido.toLowerCase().includes(busqueda.toLowerCase()) ||
-      (emp.email && emp.email.toLowerCase().includes(busqueda.toLowerCase()))
-    )
-    .sort((a, b) => {
-      const aVal = a[ordenarPor];
-      const bVal = b[ordenarPor];
-      
-      if (ordenDireccion === 'asc') {
-        return aVal > bVal ? 1 : -1;
-      } else {
-        return aVal < bVal ? 1 : -1;
-      }
-    });
+  const empleadosFiltrados = useMemo(() => {
+    return empleados
+      .filter(emp =>
+        emp.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
+        emp.apellido.toLowerCase().includes(busqueda.toLowerCase()) ||
+        (emp.email && emp.email.toLowerCase().includes(busqueda.toLowerCase()))
+      )
+      .sort((a, b) => {
+        const aVal = a[ordenarPor];
+        const bVal = b[ordenarPor];
+        
+        if (ordenDireccion === 'asc') {
+          return aVal > bVal ? 1 : -1;
+        } else {
+          return aVal < bVal ? 1 : -1;
+        }
+      });
+  }, [empleados, busqueda, ordenarPor, ordenDireccion]);
 
   const getFotoUrl = (empleado) => {
     if (empleado.foto_perfil_url) {
-      // NEXT_PUBLIC_API_URL = https://mycarrito.com.ar/api/planificador
-      // Necesitamos: https://mycarrito.com.ar/api/uploads/empleados/foto.jpg
       const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/planificador';
       const baseUrl = apiUrl.replace(/\/planificador$/, '');
       return `${baseUrl}${empleado.foto_perfil_url}`;
@@ -411,7 +379,7 @@ export default function Empleados() {
                 ))}
               </div>
             ) : (
-              /* VISTA TABLA */
+              /* VISTA TABLA - Mantener el código existente */
               <>
                 {/* Vista de escritorio - Tabla */}
                 <div className="hidden md:block card overflow-hidden">
@@ -646,7 +614,6 @@ export default function Empleados() {
                   <button
                     onClick={() => {
                       setModalCambioTarifa(false);
-                      // Revertir el cambio de tarifa
                       actualizarCampo('hora_normal', horaNormalAnterior);
                     }}
                     className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 font-medium"
@@ -685,45 +652,47 @@ export default function Empleados() {
 
                 <form onSubmit={handleSubmit}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    {/* Foto de perfil */}
-                    <div className="sm:col-span-2">
-                      <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
-                        Foto de Perfil
-                      </label>
-                      <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                        {fotoPreview ? (
-                          <img
-                            src={fotoPreview}
-                            alt="Preview"
-                            className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-blue-500 flex-shrink-0"
-                          />
-                        ) : (
-                          <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                            <FiUser className="text-2xl sm:text-3xl text-gray-400" />
+                    {/* Foto de perfil - SOLO para empleados existentes */}
+                    {empleadoEditando && (
+                      <div className="sm:col-span-2">
+                        <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                          Foto de Perfil
+                        </label>
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
+                          {fotoPreview ? (
+                            <img
+                              src={fotoPreview}
+                              alt="Preview"
+                              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-blue-500 flex-shrink-0"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
+                              <FiUser className="text-2xl sm:text-3xl text-gray-400" />
+                            </div>
+                          )}
+                          
+                          <div className="flex-1 w-full sm:w-auto">
+                            <input
+                              type="file"
+                              accept="image/*"
+                              onChange={handleFotoChange}
+                              className="hidden"
+                              id="foto-input"
+                            />
+                            <label
+                              htmlFor="foto-input"
+                              className="btn-secondary inline-flex items-center gap-2 cursor-pointer text-sm sm:text-base"
+                            >
+                              <FiUpload />
+                              {fotoPreview ? 'Cambiar Foto' : 'Subir Foto'}
+                            </label>
+                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                              Máximo 5MB. Formatos: JPG, PNG, GIF, WEBP
+                            </p>
                           </div>
-                        )}
-                        
-                        <div className="flex-1 w-full sm:w-auto">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleFotoChange}
-                            className="hidden"
-                            id="foto-input"
-                          />
-                          <label
-                            htmlFor="foto-input"
-                            className="btn-secondary inline-flex items-center gap-2 cursor-pointer text-sm sm:text-base"
-                          >
-                            <FiUpload />
-                            Subir Foto
-                          </label>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                            Máximo 5MB. Formatos: JPG, PNG, GIF, WEBP
-                          </p>
                         </div>
                       </div>
-                    </div>
+                    )}
 
                     {/* Nombre */}
                     <div>
@@ -734,9 +703,12 @@ export default function Empleados() {
                         type="text"
                         value={formData.nombre}
                         onChange={(e) => actualizarCampo('nombre', e.target.value)}
-                        className="input w-full"
+                        className={`input w-full ${errors.nombre ? 'border-red-500' : ''}`}
                         required
                       />
+                      {errors.nombre && (
+                        <p className="text-xs text-red-500 mt-1">{errors.nombre}</p>
+                      )}
                     </div>
 
                     {/* Apellido */}
@@ -748,9 +720,12 @@ export default function Empleados() {
                         type="text"
                         value={formData.apellido}
                         onChange={(e) => actualizarCampo('apellido', e.target.value)}
-                        className="input w-full"
+                        className={`input w-full ${errors.apellido ? 'border-red-500' : ''}`}
                         required
                       />
+                      {errors.apellido && (
+                        <p className="text-xs text-red-500 mt-1">{errors.apellido}</p>
+                      )}
                     </div>
 
                     {/* Email */}
@@ -762,9 +737,12 @@ export default function Empleados() {
                         type="email"
                         value={formData.mail}
                         onChange={(e) => actualizarCampo('mail', e.target.value)}
-                        className="input w-full"
+                        className={`input w-full ${errors.mail ? 'border-red-500' : ''}`}
                         required
                       />
+                      {errors.mail && (
+                        <p className="text-xs text-red-500 mt-1">{errors.mail}</p>
+                      )}
                     </div>
 
                     {/* Fecha de ingreso */}
@@ -777,9 +755,12 @@ export default function Empleados() {
                         value={formData.fecha_ingreso}
                         onChange={(e) => actualizarCampo('fecha_ingreso', e.target.value)}
                         placeholder="DD/MM/YYYY"
-                        className="input w-full"
+                        className={`input w-full ${errors.fecha_ingreso ? 'border-red-500' : ''}`}
                         required
                       />
+                      {errors.fecha_ingreso && (
+                        <p className="text-xs text-red-500 mt-1">{errors.fecha_ingreso}</p>
+                      )}
                     </div>
 
                     {/* Hora normal (tarifa) */}
@@ -791,11 +772,14 @@ export default function Empleados() {
                         type="number"
                         value={formData.hora_normal}
                         onChange={(e) => actualizarCampo('hora_normal', e.target.value)}
-                        className="input w-full text-sm sm:text-base"
+                        className={`input w-full text-sm sm:text-base ${errors.hora_normal ? 'border-red-500' : ''}`}
                         min="0"
                         step="0.01"
                         required
                       />
+                      {errors.hora_normal && (
+                        <p className="text-xs text-red-500 mt-1">{errors.hora_normal}</p>
+                      )}
                       {empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior) && (
                         <p className="text-xs text-yellow-600 dark:text-yellow-400 mt-1 flex items-center gap-1">
                           <FiAlertCircle size={12} />
@@ -853,6 +837,9 @@ export default function Empleados() {
                     <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <p className="text-sm text-blue-800 dark:text-blue-200">
                         ℹ️ Al crear el empleado se generarán automáticamente los turnos para los años <strong>2024-2027</strong> (aproximadamente 1,460 días).
+                      </p>
+                      <p className="text-sm text-blue-800 dark:text-blue-200 mt-2">
+                        📸 <strong>Nota:</strong> Las fotos de perfil solo se pueden agregar después de crear el empleado.
                       </p>
                     </div>
                   )}

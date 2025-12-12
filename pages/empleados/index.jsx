@@ -95,35 +95,40 @@ export default function Empleados() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Validar formulario
-    const validacion = validarFormulario();
-    if (!validacion.valido) {
-      toast.error(validacion.errores[0] || 'Completa todos los campos obligatorios');
-      return;
-    }
-
-    // Si está editando y cambió la hora_normal, mostrar modal de opciones
-    if (empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior)) {
-      setModalCambioTarifa(true);
-      return;
-    }
-
-    // Si no hay cambio de tarifa o es creación, proceder directamente
     await guardarEmpleado();
   };
 
   const guardarEmpleado = async () => {
     try {
-      // Construir datos sin foto
-      const datosEnviar = construirDatos();
+      // Validar formulario primero
+      const validacion = validarFormulario();
+      if (!validacion.valido) {
+        toast.error(validacion.errores[0] || 'Completa todos los campos obligatorios');
+        return;
+      }
 
-      // Validar que los datos no tengan undefined
-      const camposRequeridos = ['nombre', 'apellido', 'mail', 'fecha_ingreso', 'hora_normal'];
-      const camposFaltantes = camposRequeridos.filter(campo => !datosEnviar[campo] || datosEnviar[campo] === '');
+      // Si está editando y cambió la hora_normal, mostrar modal de opciones
+      if (empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior)) {
+        setModalCambioTarifa(true);
+        return;
+      }
+
+      // Construir datos exactamente como en logueos - objeto simple
+      // Asegurar que todos los valores estén definidos (no undefined)
+      const datosEnviar = {
+        nombre: formData.nombre !== undefined ? String(formData.nombre).trim() : '',
+        apellido: formData.apellido !== undefined ? String(formData.apellido).trim() : '',
+        mail: formData.mail !== undefined ? String(formData.mail).trim() : '',
+        fecha_ingreso: formData.fecha_ingreso !== undefined ? String(formData.fecha_ingreso).trim() : '',
+        hora_normal: formData.hora_normal !== undefined ? String(formData.hora_normal).trim() : '0',
+        antiguedad: formData.antiguedad !== undefined ? (parseFloat(formData.antiguedad) || 0) : 0,
+        dia_vacaciones: formData.dia_vacaciones !== undefined ? (parseFloat(formData.dia_vacaciones) || 14) : 14,
+        horas_vacaciones: formData.horas_vacaciones !== undefined ? (parseFloat(formData.horas_vacaciones) || 0) : 0
+      };
       
-      if (camposFaltantes.length > 0) {
-        toast.error(`Faltan campos obligatorios: ${camposFaltantes.join(', ')}`);
+      // Validar que los campos requeridos no estén vacíos
+      if (!datosEnviar.nombre || !datosEnviar.apellido || !datosEnviar.mail || !datosEnviar.fecha_ingreso || !datosEnviar.hora_normal) {
+        toast.error('Completa todos los campos obligatorios');
         return;
       }
 
@@ -132,17 +137,14 @@ export default function Empleados() {
         datosEnviar.aplicar_cambio_tarifa = opcionAplicacion;
       }
 
-      console.log('📤 [guardarEmpleado] Enviando datos del empleado (JSON sin foto)');
-      console.log('📤 [guardarEmpleado] Es edición:', !!empleadoEditando);
-      console.log('📤 [guardarEmpleado] Datos a enviar:', datosEnviar);
+      console.log('📤 [guardarEmpleado] Enviando datos (patrón logueos):', datosEnviar);
+      console.log('📤 [guardarEmpleado] formData original:', formData);
 
-      // Crear o actualizar empleado
+      // Crear o actualizar empleado - igual que logueos
       if (empleadoEditando) {
-        console.log(`📤 [guardarEmpleado] Actualizando empleado ID: ${empleadoEditando.id}`);
         const response = await empleadosAPI.actualizar(empleadoEditando.id, datosEnviar);
         toast.success(response.data.message || 'Empleado actualizado exitosamente');
       } else {
-        console.log('📤 [guardarEmpleado] Creando nuevo empleado');
         const response = await empleadosAPI.crear(datosEnviar);
         if (response.data.turnosGenerados) {
           toast.success('Empleado creado con turnos 2024-2027 generados');

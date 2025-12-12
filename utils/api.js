@@ -279,25 +279,18 @@ export const empleadosAPI = {
     apiClient.get(`/empleados/${id}`),
   
   crear: (datos) => {
-    // Crear empleado (puede incluir fotoBase64 en el mismo objeto JSON)
-    console.log('📤 [empleadosAPI.crear] Enviando datos a /empleados');
-    console.log('📤 [empleadosAPI.crear] Tiene fotoBase64:', !!datos?.fotoBase64);
-    return apiClient.post('/empleados', datos, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    // Crear empleado - igual que logueos, usar apiClient.post directamente
+    console.log('📤 [empleadosAPI.crear] Datos a enviar:', datos);
+    console.log('📤 [empleadosAPI.crear] Tipo de datos:', typeof datos);
+    console.log('📤 [empleadosAPI.crear] Es objeto:', datos instanceof Object);
+    console.log('📤 [empleadosAPI.crear] Keys:', Object.keys(datos || {}));
+    return apiClient.post('/empleados', datos);
   },
   
   actualizar: (id, datos) => {
-    // Actualizar empleado (puede incluir fotoBase64 en el mismo objeto JSON)
-    console.log(`📤 [empleadosAPI.actualizar] Actualizando empleado: ${id}`);
-    console.log('📤 [empleadosAPI.actualizar] Tiene fotoBase64:', !!datos?.fotoBase64);
-    return apiClient.put(`/empleados/${id}`, datos, {
-      headers: {
-        'Content-Type': 'application/json'
-      }
-    });
+    // Actualizar empleado - igual que logueos, usar apiClient.put directamente
+    console.log(`📤 [empleadosAPI.actualizar] Actualizando empleado ${id}:`, datos);
+    return apiClient.put(`/empleados/${id}`, datos);
   },
   
   eliminar: (id) =>

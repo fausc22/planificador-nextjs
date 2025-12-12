@@ -173,39 +173,25 @@ export function useEmpleadoForm(empleadoInicial = null) {
   };
 
   /**
-   * Construye un objeto JSON con todos los campos del formulario (SIN foto por ahora)
+   * Construye un objeto JSON con todos los campos del formulario
+   * PATRÓN IDÉNTICO A LOGUEOS - objeto simple y directo
    * @returns {Object} - Objeto listo para enviar
    */
   const construirDatos = () => {
-    // Asegurar que todos los valores estén definidos y no sean undefined
+    // Construir objeto exactamente como en logueos - simple y directo
     const datos = {
-      nombre: formData.nombre !== undefined && formData.nombre !== null 
-        ? String(formData.nombre).trim() 
-        : '',
-      apellido: formData.apellido !== undefined && formData.apellido !== null 
-        ? String(formData.apellido).trim() 
-        : '',
-      mail: formData.mail !== undefined && formData.mail !== null 
-        ? String(formData.mail).trim() 
-        : '',
-      fecha_ingreso: formData.fecha_ingreso !== undefined && formData.fecha_ingreso !== null 
-        ? String(formData.fecha_ingreso).trim() 
-        : '',
-      hora_normal: formData.hora_normal !== undefined && formData.hora_normal !== null 
-        ? String(formData.hora_normal).trim() 
-        : '0',
-      antiguedad: formData.antiguedad !== undefined && formData.antiguedad !== null 
-        ? (parseFloat(formData.antiguedad) || 0) 
-        : 0,
-      dia_vacaciones: formData.dia_vacaciones !== undefined && formData.dia_vacaciones !== null 
-        ? (parseFloat(formData.dia_vacaciones) || 14) 
-        : 14,
-      horas_vacaciones: formData.horas_vacaciones !== undefined && formData.horas_vacaciones !== null 
-        ? (parseFloat(formData.horas_vacaciones) || 0) 
-        : 0
+      nombre: formData.nombre || '',
+      apellido: formData.apellido || '',
+      mail: formData.mail || '',
+      fecha_ingreso: formData.fecha_ingreso || '',
+      hora_normal: formData.hora_normal || '0',
+      antiguedad: formData.antiguedad || 0,
+      dia_vacaciones: formData.dia_vacaciones || 14,
+      horas_vacaciones: formData.horas_vacaciones || 0
     };
 
     console.log('📤 [construirDatos] Datos construidos:', datos);
+    console.log('📤 [construirDatos] formData original:', formData);
     return datos;
   };
 

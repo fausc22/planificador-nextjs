@@ -6,7 +6,7 @@ import Loading from '../../components/Loading';
 import EmptyState from '../../components/EmptyState';
 import Modal from '../../components/ui/Modal';
 import Input from '../../components/ui/Input';
-import Select from '../../components/ui/Select';
+import CustomSelect from '../../components/ui/CustomSelect';
 import Button from '../../components/ui/Button';
 import { FiUser, FiPlus, FiEdit, FiTrash2, FiX, FiLock, FiCheck, FiXCircle, FiShield, FiUserCheck, FiUserX } from 'react-icons/fi';
 import { usuariosAPI, empleadosAPI } from '../../utils/api';
@@ -262,7 +262,7 @@ export default function Usuarios() {
       <Layout>
         <div className="container-custom py-8">
           {/* Header */}
-          <div className="mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                 Usuarios
@@ -273,91 +273,89 @@ export default function Usuarios() {
             </div>
             <button
               onClick={() => abrirModal()}
-              className="btn-primary flex items-center justify-center space-x-2 w-full sm:w-auto px-4 py-2"
+              className="btn-primary flex items-center justify-center space-x-2 w-full sm:w-auto"
             >
               <FiPlus />
-              <span>Nuevo Usuario</span>
+              <span className="hidden sm:inline">Nuevo Usuario</span>
+              <span className="sm:hidden">Nuevo</span>
             </button>
           </div>
 
           {/* Estadísticas */}
           {!loading && usuarios.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="card bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
+                    <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 font-medium">
                       Total Usuarios
                     </p>
-                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                    <p className="text-xl sm:text-2xl font-bold text-blue-900 dark:text-blue-100 mt-1">
                       {usuarios.length}
                     </p>
                   </div>
-                  <FiUser className="text-3xl text-blue-500" />
+                  <FiUser className="text-2xl sm:text-3xl text-blue-500 flex-shrink-0" />
                 </div>
               </div>
 
               <div className="card bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-green-600 dark:text-green-400 font-medium">
+                    <p className="text-xs sm:text-sm text-green-600 dark:text-green-400 font-medium">
                       Activos
                     </p>
-                    <p className="text-2xl font-bold text-green-900 dark:text-green-100">
+                    <p className="text-xl sm:text-2xl font-bold text-green-900 dark:text-green-100 mt-1">
                       {usuariosActivos}
                     </p>
                   </div>
-                  <FiUserCheck className="text-3xl text-green-500" />
+                  <FiUserCheck className="text-2xl sm:text-3xl text-green-500 flex-shrink-0" />
                 </div>
               </div>
 
               <div className="card bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-red-600 dark:text-red-400 font-medium">
+                    <p className="text-xs sm:text-sm text-red-600 dark:text-red-400 font-medium">
                       Inactivos
                     </p>
-                    <p className="text-2xl font-bold text-red-900 dark:text-red-100">
+                    <p className="text-xl sm:text-2xl font-bold text-red-900 dark:text-red-100 mt-1">
                       {usuariosInactivos}
                     </p>
                   </div>
-                  <FiUserX className="text-3xl text-red-500" />
+                  <FiUserX className="text-2xl sm:text-3xl text-red-500 flex-shrink-0" />
                 </div>
               </div>
 
               <div className="card bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                    <p className="text-xs sm:text-sm text-purple-600 dark:text-purple-400 font-medium">
                       Gerentes / Users
                     </p>
-                    <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                    <p className="text-xl sm:text-2xl font-bold text-purple-900 dark:text-purple-100 mt-1">
                       {gerentes} / {users}
                     </p>
                   </div>
-                  <FiShield className="text-3xl text-purple-500" />
+                  <FiShield className="text-2xl sm:text-3xl text-purple-500 flex-shrink-0" />
                 </div>
               </div>
             </div>
           )}
 
           {/* Búsqueda */}
-          <div className="card mb-6">
-            <div className="flex items-center space-x-4">
-              <div className="flex-1">
-                <input
-                  type="text"
-                  value={busqueda}
-                  onChange={(e) => setBusqueda(e.target.value)}
-                  className="input w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-500"
-                  placeholder="Buscar por usuario, nombre, email o rol..."
-                />
-              </div>
-            </div>
+          <div className="card mb-4 sm:mb-6">
+            <input
+              type="text"
+              value={busqueda}
+              onChange={(e) => setBusqueda(e.target.value)}
+              className="input w-full bg-white dark:bg-gray-700 text-gray-900 dark:text-white border-gray-300 dark:border-gray-600 placeholder:text-gray-400 dark:placeholder:text-gray-500 text-sm sm:text-base"
+              placeholder="Buscar por usuario, nombre, email o rol..."
+            />
           </div>
 
           {/* Tabla de Usuarios - Desktop */}
-          <div className="card overflow-x-auto hidden md:block">
+          <div className="card hidden lg:block">
+            <div className="overflow-x-auto">
             {loading ? (
               <Loading />
             ) : usuariosFiltrados.length === 0 ? (
@@ -367,17 +365,17 @@ export default function Usuarios() {
                 description={busqueda ? 'No se encontraron usuarios con ese criterio de búsqueda' : 'No hay usuarios registrados en el sistema'}
               />
             ) : (
-              <table className="table">
+              <table className="table w-full">
                 <thead>
                   <tr>
                     <th>Usuario</th>
                     <th>Nombre</th>
-                    <th>Email</th>
-                    <th>Teléfono</th>
-                    <th>Rol</th>
-                    <th>Empleado</th>
-                    <th>Estado</th>
-                    <th>Acciones</th>
+                    <th className="hidden xl:table-cell">Email</th>
+                    <th className="hidden xl:table-cell">Teléfono</th>
+                    <th className="text-center">Rol</th>
+                    <th className="hidden 2xl:table-cell">Empleado</th>
+                    <th className="text-center">Estado</th>
+                    <th className="text-right">Acciones</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -385,7 +383,7 @@ export default function Usuarios() {
                     <tr key={usuario.id}>
                       <td>
                         <div className="flex items-center space-x-2">
-                          <FiUser className="text-blue-500" />
+                          <FiUser className="text-blue-500 flex-shrink-0" />
                           <span className="font-medium text-gray-900 dark:text-gray-100">{usuario.usuario}</span>
                         </div>
                       </td>
@@ -394,74 +392,74 @@ export default function Usuarios() {
                           {usuario.nombre} {usuario.apellido}
                         </span>
                       </td>
-                      <td>
+                      <td className="hidden xl:table-cell">
                         <span className="text-sm text-gray-600 dark:text-gray-400">
                           {usuario.email || '-'}
                         </span>
                       </td>
-                      <td>
+                      <td className="hidden xl:table-cell">
                         <span className="text-sm text-gray-600 dark:text-gray-400">
                           {usuario.telefono || '-'}
                         </span>
                       </td>
-                      <td>
-                        <span className={`badge ${usuario.rol === 'gerente' ? 'badge-warning' : 'badge-info'}`}>
+                      <td className="text-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${usuario.rol === 'gerente' ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200' : 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'}`}>
                           {usuario.rol === 'gerente' ? 'Gerente' : 'User'}
                         </span>
                       </td>
-                      <td>
+                      <td className="hidden 2xl:table-cell">
                         <span className="text-sm text-gray-600 dark:text-gray-400">
                           {usuario.empleado_nombre ? `${usuario.empleado_nombre} ${usuario.empleado_apellido || ''}` : '-'}
                         </span>
                       </td>
-                      <td>
-                        <span className={`badge ${usuario.activo ? 'badge-success' : 'badge-danger'}`}>
+                      <td className="text-center">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${usuario.activo ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200' : 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'}`}>
                           {usuario.activo ? (
                             <>
-                              <FiCheck className="inline mr-1" />
+                              <FiCheck className="inline mr-1" size={12} />
                               Activo
                             </>
                           ) : (
                             <>
-                              <FiXCircle className="inline mr-1" />
+                              <FiXCircle className="inline mr-1" size={12} />
                               Inactivo
                             </>
                           )}
                         </span>
                       </td>
                       <td>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex justify-end items-center space-x-1">
                           <button
                             onClick={() => abrirModal(usuario)}
-                            className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                            className="p-2 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
                             title="Editar"
                           >
-                            <FiEdit />
+                            <FiEdit size={16} />
                           </button>
                           <button
                             onClick={() => abrirModalPassword(usuario)}
-                            className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded transition-colors"
+                            className="p-2 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 rounded-lg transition-colors"
                             title="Cambiar contraseña"
                           >
-                            <FiLock />
+                            <FiLock size={16} />
                           </button>
                           <button
                             onClick={() => handleToggleActivo(usuario)}
-                            className={`p-2 rounded transition-colors ${
+                            className={`p-2 rounded-lg transition-colors ${
                               usuario.activo
                                 ? 'text-orange-600 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-900/20'
                                 : 'text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/20'
                             }`}
                             title={usuario.activo ? 'Deshabilitar' : 'Habilitar'}
                           >
-                            {usuario.activo ? <FiUserX /> : <FiUserCheck />}
+                            {usuario.activo ? <FiUserX size={16} /> : <FiUserCheck size={16} />}
                           </button>
                           <button
                             onClick={() => handleEliminar(usuario)}
-                            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                            className="p-2 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                             title="Eliminar"
                           >
-                            <FiTrash2 />
+                            <FiTrash2 size={16} />
                           </button>
                         </div>
                       </td>
@@ -470,10 +468,11 @@ export default function Usuarios() {
                 </tbody>
               </table>
             )}
+            </div>
           </div>
 
-          {/* Cards de Usuarios - Mobile */}
-          <div className="md:hidden space-y-4">
+          {/* Cards de Usuarios - Mobile/Tablet */}
+          <div className="lg:hidden space-y-3 sm:space-y-4">
             {loading ? (
               <Loading />
             ) : usuariosFiltrados.length === 0 ? (
@@ -653,30 +652,32 @@ export default function Usuarios() {
               />
             </div>
 
-            {/* Rol */}
-            <Select
-              label="Rol"
+            {            /* Rol */}
+            <CustomSelect
+              label="Rol *"
               value={formData.rol}
               onChange={(e) => setFormData({ ...formData, rol: e.target.value })}
-              required
-            >
-              <option value="user">User (Acceso limitado)</option>
-              <option value="gerente">Gerente (Acceso completo)</option>
-            </Select>
+              options={[
+                { value: 'user', label: 'User (Acceso limitado)' },
+                { value: 'gerente', label: 'Gerente (Acceso completo)' }
+              ]}
+              containerClassName="mb-0"
+            />
 
             {/* Empleado asociado */}
-            <Select
+            <CustomSelect
               label="Empleado Asociado (opcional)"
               value={formData.empleado_id}
               onChange={(e) => setFormData({ ...formData, empleado_id: e.target.value })}
-            >
-              <option value="">Sin empleado asociado</option>
-              {empleados.map((emp) => (
-                <option key={emp.id} value={emp.id}>
-                  {emp.nombre} {emp.apellido}
-                </option>
-              ))}
-            </Select>
+              options={[
+                { value: '', label: 'Sin empleado asociado' },
+                ...empleados.map((emp) => ({
+                  value: emp.id,
+                  label: `${emp.nombre} ${emp.apellido}`
+                }))
+              ]}
+              containerClassName="mb-0"
+            />
 
             {/* Botones */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4">

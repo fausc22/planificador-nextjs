@@ -4,7 +4,7 @@ import Head from 'next/head';
 import Layout from '../../components/Layout';
 import Loading from '../../components/Loading';
 import EmptyState from '../../components/EmptyState';
-import Select from '../../components/ui/Select';
+import CustomSelect from '../../components/ui/CustomSelect';
 import { FiPlus, FiCalendar, FiEdit, FiTrash2, FiX, FiUser, FiSun, FiAlertCircle, FiMaximize2, FiMinimize2, FiChevronRight, FiChevronLeft } from 'react-icons/fi';
 import { apiClient } from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -379,7 +379,7 @@ export default function Vacaciones() {
           <div className="card mb-4 sm:mb-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
               <div>
-                <Select
+                <CustomSelect
                   label="Año"
                   value={anioFiltro}
                   onChange={(e) => setAnioFiltro(parseInt(e.target.value))}
@@ -392,7 +392,7 @@ export default function Vacaciones() {
               </div>
 
               <div>
-                <Select
+                <CustomSelect
                   label="Empleado"
                   value={empleadoFiltro}
                   onChange={(e) => setEmpleadoFiltro(e.target.value)}
@@ -400,7 +400,7 @@ export default function Vacaciones() {
                     { value: '', label: 'Todos los empleados' },
                     ...empleados.map((emp) => ({
                       value: `${emp.nombre} ${emp.apellido}`,
-                      label: `${emp.nombre} ${emp.apellido} (${emp.dia_vacaciones} días disponibles)`
+                      label: `${emp.nombre} ${emp.apellido} (${emp.dia_vacaciones} días)`
                     }))
                   ]}
                   containerClassName="mb-0"
@@ -704,7 +704,7 @@ export default function Vacaciones() {
               <form onSubmit={handleSubmit} className="p-6 space-y-6">
                 {/* Empleado */}
                 <div>
-                  <Select
+                  <CustomSelect
                     label="Empleado"
                     value={formData.nombre_empleado}
                     onChange={(e) => handleEmpleadoChange(e.target.value)}
@@ -712,7 +712,7 @@ export default function Vacaciones() {
                       { value: '', label: 'Seleccionar empleado...' },
                       ...empleados.map((emp) => ({
                         value: `${emp.nombre} ${emp.apellido}`,
-                        label: `${emp.nombre} ${emp.apellido} (${emp.dia_vacaciones} días disponibles)`
+                        label: `${emp.nombre} ${emp.apellido} (${emp.dia_vacaciones} días)`
                       }))
                     ]}
                     required

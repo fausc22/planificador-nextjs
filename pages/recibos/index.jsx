@@ -4,7 +4,8 @@ import Head from 'next/head';
 import { useRouter } from 'next/router';
 import Layout from '../../components/Layout';
 import Loading from '../../components/Loading';
-import { FiDollarSign, FiUser, FiEdit2, FiSave, FiX, FiTrendingUp, FiTrendingDown, FiExternalLink, FiDownload } from 'react-icons/fi';
+import CustomSelect from '../../components/ui/CustomSelect';
+import { FiDollarSign, FiUser, FiEdit2, FiSave, FiX, FiTrendingUp, FiTrendingDown, FiExternalLink, FiDownload, FiLoader } from 'react-icons/fi';
 import { apiClient } from '../../utils/api';
 import toast from 'react-hot-toast';
 
@@ -25,6 +26,9 @@ export default function Recibos() {
   // Modal de detalle de extra
   const [modalExtraAbierto, setModalExtraAbierto] = useState(false);
   const [extraSeleccionado, setExtraSeleccionado] = useState(null);
+  
+  // Estado para loading del PDF
+  const [generandoPdf, setGenerandoPdf] = useState(false);
 
   const MESES = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -193,6 +197,7 @@ export default function Recibos() {
   };
 
   const imprimirPDF = async () => {
+    setGenerandoPdf(true);
     try {
       const mesNombre = MESES[mes - 1].toUpperCase();
       const url = `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/recibos/${empleadoSeleccionado}/${mesNombre}/${anio}/pdf`;
@@ -229,6 +234,8 @@ export default function Recibos() {
     } catch (error) {
       console.error('Error generando PDF:', error);
       toast.error('Error al generar PDF');
+    } finally {
+      setGenerandoPdf(false);
     }
   };
 
@@ -266,51 +273,45 @@ export default function Recibos() {
           <div className="card mb-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Año
-                </label>
-                <select
+                <CustomSelect
+                  label="Año"
                   value={anio}
                   onChange={(e) => setAnio(parseInt(e.target.value))}
-                  className="input"
-                >
-                  {[2024, 2025, 2026].map(a => (
-                    <option key={a} value={a}>{a}</option>
-                  ))}
-                </select>
+                  options={[2024, 2025, 2026].map(a => ({
+                    value: a,
+                    label: a.toString()
+                  }))}
+                  containerClassName="mb-0"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Mes
-                </label>
-                <select
+                <CustomSelect
+                  label="Mes"
                   value={mes}
                   onChange={(e) => setMes(parseInt(e.target.value))}
-                  className="input"
-                >
-                  {MESES.map((m, idx) => (
-                    <option key={idx} value={idx + 1}>{m}</option>
-                  ))}
-                </select>
+                  options={MESES.map((m, idx) => ({
+                    value: idx + 1,
+                    label: m
+                  }))}
+                  containerClassName="mb-0"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Empleado
-                </label>
-                <select 
-                  className="input"
+                <CustomSelect
+                  label="Empleado"
                   value={empleadoSeleccionado}
                   onChange={(e) => setEmpleadoSeleccionado(e.target.value)}
-                >
-                  <option value="">Seleccionar empleado...</option>
-                  {empleados.map((emp) => (
-                    <option key={emp.id} value={`${emp.nombre} ${emp.apellido}`}>
-                      {emp.nombre} {emp.apellido}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Seleccionar empleado...' },
+                    ...empleados.map((emp) => ({
+                      value: `${emp.nombre} ${emp.apellido}`,
+                      label: `${emp.nombre} ${emp.apellido}`
+                    }))
+                  ]}
+                  containerClassName="mb-0"
+                />
               </div>
             </div>
 
@@ -422,10 +423,20 @@ export default function Recibos() {
                   </h2>
                   <button
                     onClick={imprimirPDF}
-                    className="btn-primary flex items-center space-x-2"
+                    disabled={generandoPdf}
+                    className="btn-primary flex items-center space-x-2 disabled:opacity-70 disabled:cursor-not-allowed min-w-[140px] justify-center"
                   >
-                    <FiDownload />
-                    <span>Imprimir PDF</span>
+                    {generandoPdf ? (
+                      <>
+                        <FiLoader className="animate-spin" />
+                        <span>Generando...</span>
+                      </>
+                    ) : (
+                      <>
+                        <FiDownload />
+                        <span>Imprimir PDF</span>
+                      </>
+                    )}
                   </button>
                 </div>
                 

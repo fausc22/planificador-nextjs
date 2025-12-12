@@ -4,8 +4,8 @@ import Head from 'next/head';
 import Layout from '../../components/Layout';
 import { useEmpleados } from '../../hooks/useEmpleados';
 import { useEmpleadoForm } from '../../hooks/useEmpleadoForm';
-import Select from '../../components/ui/Select';
-import { FiPlus, FiEdit, FiTrash2, FiSearch, FiUser, FiMail, FiCalendar, FiDollarSign, FiX, FiSave, FiUpload, FiGrid, FiList, FiAlertCircle, FiCheck } from 'react-icons/fi';
+import CustomSelect from '../../components/ui/CustomSelect';
+import { FiPlus, FiEdit, FiTrash2, FiSearch, FiUser, FiMail, FiCalendar, FiDollarSign, FiX, FiSave, FiGrid, FiList, FiAlertCircle, FiCheck } from 'react-icons/fi';
 
 export default function Empleados() {
   const [busqueda, setBusqueda] = useState('');
@@ -23,20 +23,15 @@ export default function Empleados() {
     loading,
     crearEmpleado,
     actualizarEmpleado,
-    actualizarFotoEmpleado,
     eliminarEmpleado
   } = useEmpleados();
   
   // Hook personalizado para manejar el formulario
   const {
     formData,
-    fotoPreview,
-    archivoFoto,
     errors,
     actualizarCampo,
     resetearFormulario,
-    manejarCambioFoto,
-    limpiarFoto,
     validarFormulario,
     obtenerDatos
   } = useEmpleadoForm(null);
@@ -66,18 +61,8 @@ export default function Empleados() {
     setModalCambioTarifa(false);
     setEmpleadoEditando(null);
     setHoraNormalAnterior(null);
-    limpiarFoto();
     resetearFormulario();
     setOpcionAplicacion('desde_hoy');
-  };
-
-  const handleFotoChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      manejarCambioFoto(file, (error) => {
-        // El toast se maneja en el hook
-      });
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -107,14 +92,9 @@ export default function Empleados() {
         datosEnviar.aplicar_cambio_tarifa = opcionAplicacion;
       }
 
-      // Crear o actualizar empleado
+      // Crear o actualizar empleado (sin foto - la foto es solo para visualización)
       if (empleadoEditando) {
         await actualizarEmpleado(empleadoEditando.id, datosEnviar);
-        
-        // Si hay foto nueva, actualizarla por separado
-        if (archivoFoto) {
-          await actualizarFotoEmpleado(empleadoEditando.id, archivoFoto);
-        }
       } else {
         await crearEmpleado(datosEnviar);
       }
@@ -240,7 +220,7 @@ export default function Empleados() {
                 />
               </div>
               
-              <Select
+              <CustomSelect
                 value={ordenarPor}
                 onChange={(e) => ordenarEmpleados(e.target.value)}
                 options={[
@@ -652,42 +632,24 @@ export default function Empleados() {
 
                 <form onSubmit={handleSubmit}>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    {/* Foto de perfil - SOLO para empleados existentes */}
-                    {empleadoEditando && (
+                    {/* Foto de perfil - SOLO VISUALIZACIÓN para empleados existentes */}
+                    {empleadoEditando && getFotoUrl(empleadoEditando) && (
                       <div className="sm:col-span-2">
-                        <label className="block text-sm font-medium mb-2 text-gray-700 dark:text-gray-300">
+                        <label className="block text-sm font-medium mb-3 text-gray-700 dark:text-gray-300">
                           Foto de Perfil
                         </label>
-                        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4">
-                          {fotoPreview ? (
-                            <img
-                              src={fotoPreview}
-                              alt="Preview"
-                              className="w-16 h-16 sm:w-20 sm:h-20 rounded-full object-cover border-2 border-blue-500 flex-shrink-0"
-                            />
-                          ) : (
-                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center flex-shrink-0">
-                              <FiUser className="text-2xl sm:text-3xl text-gray-400" />
-                            </div>
-                          )}
-                          
-                          <div className="flex-1 w-full sm:w-auto">
-                            <input
-                              type="file"
-                              accept="image/*"
-                              onChange={handleFotoChange}
-                              className="hidden"
-                              id="foto-input"
-                            />
-                            <label
-                              htmlFor="foto-input"
-                              className="btn-secondary inline-flex items-center gap-2 cursor-pointer text-sm sm:text-base"
-                            >
-                              <FiUpload />
-                              {fotoPreview ? 'Cambiar Foto' : 'Subir Foto'}
-                            </label>
-                            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                              Máximo 5MB. Formatos: JPG, PNG, GIF, WEBP
+                        <div className="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                          <img
+                            src={getFotoUrl(empleadoEditando)}
+                            alt={`${empleadoEditando.nombre} ${empleadoEditando.apellido}`}
+                            className="w-16 h-16 rounded-full object-cover border-2 border-blue-500 flex-shrink-0"
+                            onError={(e) => {
+                              e.target.src = `https://ui-avatars.com/api/?name=${empleadoEditando.nombre}+${empleadoEditando.apellido}&size=200&background=4299E1&color=fff`;
+                            }}
+                          />
+                          <div className="flex-1">
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              📸 La foto es solo para visualización y no puede ser editada desde esta interfaz.
                             </p>
                           </div>
                         </div>
@@ -837,9 +799,6 @@ export default function Empleados() {
                     <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                       <p className="text-sm text-blue-800 dark:text-blue-200">
                         ℹ️ Al crear el empleado se generarán automáticamente los turnos para los años <strong>2024-2027</strong> (aproximadamente 1,460 días).
-                      </p>
-                      <p className="text-sm text-blue-800 dark:text-blue-200 mt-2">
-                        📸 <strong>Nota:</strong> Las fotos de perfil solo se pueden agregar después de crear el empleado.
                       </p>
                     </div>
                   )}

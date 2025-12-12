@@ -4,7 +4,7 @@ import Head from 'next/head';
 import Layout from '../../components/Layout';
 import Loading from '../../components/Loading';
 import EmptyState from '../../components/EmptyState';
-import Select from '../../components/ui/Select';
+import CustomSelect from '../../components/ui/CustomSelect';
 import { FiClock, FiUser, FiCalendar, FiDollarSign } from 'react-icons/fi';
 import { apiClient } from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -130,7 +130,7 @@ export default function ControlHoras() {
           <div className="card mb-4 sm:mb-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Select
+                <CustomSelect
                   label="Año"
                   value={anio}
                   onChange={(e) => setAnio(parseInt(e.target.value))}
@@ -143,7 +143,7 @@ export default function ControlHoras() {
               </div>
 
               <div>
-                <Select
+                <CustomSelect
                   label="Mes"
                   value={mes}
                   onChange={(e) => setMes(parseInt(e.target.value))}
@@ -156,7 +156,7 @@ export default function ControlHoras() {
               </div>
 
               <div>
-                <Select
+                <CustomSelect
                   label="Empleado"
                   value={empleadoSeleccionado}
                   onChange={(e) => setEmpleadoSeleccionado(e.target.value)}

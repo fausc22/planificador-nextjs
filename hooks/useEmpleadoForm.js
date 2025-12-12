@@ -35,8 +35,6 @@ export function useEmpleadoForm(empleadoInicial = null) {
     return { ...INITIAL_FORM_DATA };
   });
 
-  const [fotoPreview, setFotoPreview] = useState(null);
-  const [archivoFoto, setArchivoFoto] = useState(null);
   const [errors, setErrors] = useState({});
 
   /**
@@ -72,54 +70,10 @@ export function useEmpleadoForm(empleadoInicial = null) {
         dia_vacaciones: empleado.dia_vacaciones ?? 14,
         horas_vacaciones: empleado.horas_vacaciones ?? 0
       });
-      if (empleado.foto_perfil_url) {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/planificador';
-        const baseUrl = apiUrl.replace(/\/planificador$/, '');
-        setFotoPreview(`${baseUrl}${empleado.foto_perfil_url}`);
-      } else {
-        setFotoPreview(null);
-      }
     } else {
       setFormData({ ...INITIAL_FORM_DATA });
-      setFotoPreview(null);
     }
-    setArchivoFoto(null);
     setErrors({});
-  }, []);
-
-  /**
-   * Maneja el cambio de foto
-   */
-  const manejarCambioFoto = useCallback((archivo, onError = null) => {
-    if (!archivo) return;
-
-    // Validar tamaño (5MB)
-    if (archivo.size > 5 * 1024 * 1024) {
-      if (onError) {
-        onError('La imagen no puede superar 5MB');
-      }
-      return;
-    }
-
-    setArchivoFoto(archivo);
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setFotoPreview(reader.result);
-    };
-    reader.onerror = () => {
-      if (onError) {
-        onError('Error al leer el archivo');
-      }
-    };
-    reader.readAsDataURL(archivo);
-  }, []);
-
-  /**
-   * Limpia la foto
-   */
-  const limpiarFoto = useCallback(() => {
-    setArchivoFoto(null);
-    setFotoPreview(null);
   }, []);
 
   /**
@@ -172,13 +126,9 @@ export function useEmpleadoForm(empleadoInicial = null) {
 
   return {
     formData,
-    fotoPreview,
-    archivoFoto,
     errors,
     actualizarCampo,
     resetearFormulario,
-    manejarCambioFoto,
-    limpiarFoto,
     validarFormulario,
     obtenerDatos
   };

@@ -1,7 +1,7 @@
 // components/planificador/ModalPDF.jsx - Modal para generar PDF
 import Modal from '../ui/Modal';
 import Button from '../ui/Button';
-import { FiDownload } from 'react-icons/fi';
+import { FiDownload, FiLoader } from 'react-icons/fi';
 
 const MESES = [
   'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
@@ -119,12 +119,20 @@ export default function ModalPDF({
         <Button
           variant="primary"
           onClick={onGenerarPdf}
-          isLoading={generandoPdf}
           disabled={generandoPdf}
-          className="flex-1"
+          className="flex-1 min-w-[140px] justify-center"
         >
-          <FiDownload className="mr-2" />
-          Generar PDF
+          {generandoPdf ? (
+            <>
+              <FiLoader className="mr-2 animate-spin" />
+              Generando...
+            </>
+          ) : (
+            <>
+              <FiDownload className="mr-2" />
+              Generar PDF
+            </>
+          )}
         </Button>
       </div>
     </Modal>

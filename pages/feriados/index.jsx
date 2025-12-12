@@ -4,7 +4,7 @@ import Head from 'next/head';
 import Layout from '../../components/Layout';
 import Loading from '../../components/Loading';
 import EmptyState from '../../components/EmptyState';
-import Select from '../../components/ui/Select';
+import CustomSelect from '../../components/ui/CustomSelect';
 import { FiStar, FiPlus, FiEdit, FiTrash2, FiX, FiCalendar } from 'react-icons/fi';
 import { apiClient } from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -128,7 +128,7 @@ export default function Feriados() {
       <Layout>
         <div className="container-custom py-8">
           {/* Header */}
-          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
             <div>
               <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                 Feriados
@@ -139,10 +139,11 @@ export default function Feriados() {
             </div>
             <button
               onClick={() => abrirModal()}
-              className="btn-primary flex items-center space-x-2 w-full sm:w-auto justify-center"
+              className="btn-primary flex items-center justify-center space-x-2 w-full sm:w-auto"
             >
               <FiPlus />
-              <span>Nuevo Feriado</span>
+              <span className="hidden sm:inline">Nuevo Feriado</span>
+              <span className="sm:hidden">Nuevo</span>
             </button>
           </div>
 
@@ -150,7 +151,7 @@ export default function Feriados() {
           <div className="card mb-4 sm:mb-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div>
-                <Select
+                <CustomSelect
                   label="Filtrar por Año"
                   value={anioFiltro}
                   onChange={(e) => setAnioFiltro(parseInt(e.target.value))}
@@ -166,39 +167,39 @@ export default function Feriados() {
 
           {/* Estadísticas */}
           {!loading && feriados.length > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-4 sm:mb-6">
               <div className="card bg-purple-50 dark:bg-purple-900/20 border-purple-200 dark:border-purple-800">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-purple-600 dark:text-purple-400 font-medium">
+                    <p className="text-xs sm:text-sm text-purple-600 dark:text-purple-400 font-medium">
                       Total Feriados
                     </p>
-                    <p className="text-2xl font-bold text-purple-900 dark:text-purple-100">
+                    <p className="text-xl sm:text-2xl font-bold text-purple-900 dark:text-purple-100 mt-1">
                       {feriados.length}
                     </p>
                   </div>
-                  <FiStar className="text-3xl text-purple-500" />
+                  <FiStar className="text-2xl sm:text-3xl text-purple-500" />
                 </div>
               </div>
 
               <div className="card bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                      Año
+                    <p className="text-xs sm:text-sm text-blue-600 dark:text-blue-400 font-medium">
+                      Año Seleccionado
                     </p>
-                    <p className="text-2xl font-bold text-blue-900 dark:text-blue-100">
+                    <p className="text-xl sm:text-2xl font-bold text-blue-900 dark:text-blue-100 mt-1">
                       {anioFiltro}
                     </p>
                   </div>
-                  <FiCalendar className="text-3xl text-blue-500" />
+                  <FiCalendar className="text-2xl sm:text-3xl text-blue-500" />
                 </div>
               </div>
             </div>
           )}
 
           {/* Tabla de Feriados */}
-          <div className="card overflow-x-auto">
+          <div className="card">
             {loading ? (
               <Loading />
             ) : feriados.length === 0 ? (
@@ -208,85 +209,141 @@ export default function Feriados() {
                 description={`No se encontraron feriados para el año ${anioFiltro}`}
               />
             ) : (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Fecha</th>
-                    <th>Festejo</th>
-                    <th>Día</th>
-                    <th>Período</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <>
+                {/* Vista Desktop - Tabla */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="table w-full">
+                    <thead>
+                      <tr>
+                        <th>Fecha</th>
+                        <th>Festejo</th>
+                        <th className="text-center">Día</th>
+                        <th className="text-center">Período</th>
+                        <th className="text-right">Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {feriados.map((feriado) => (
+                        <tr key={feriado.id}>
+                          <td>
+                            <div className="flex items-center space-x-2">
+                              <FiCalendar className="text-purple-500 flex-shrink-0" />
+                              <span className="font-medium">{feriado.fecha}</span>
+                            </div>
+                          </td>
+                          <td>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">
+                              {feriado.festejo}
+                            </span>
+                          </td>
+                          <td className="text-center">
+                            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                              {feriado.dia}
+                            </span>
+                          </td>
+                          <td className="text-center">
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {feriado.periodo || anioFiltro}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="flex justify-end items-center space-x-2">
+                              <button
+                                onClick={() => abrirModal(feriado)}
+                                className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                title="Editar"
+                              >
+                                <FiEdit />
+                              </button>
+                              <button
+                                onClick={() => handleEliminar(feriado.id, feriado.festejo)}
+                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                title="Eliminar"
+                              >
+                                <FiTrash2 />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Vista Mobile - Cards */}
+                <div className="md:hidden space-y-3">
                   {feriados.map((feriado) => (
-                    <tr key={feriado.id}>
-                      <td>
-                        <div className="flex items-center space-x-2">
-                          <FiCalendar className="text-purple-500" />
-                          <span className="font-medium">{feriado.fecha}</span>
+                    <div
+                      key={feriado.id}
+                      className="border border-gray-200 dark:border-gray-700 rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <FiCalendar className="text-purple-500 flex-shrink-0" size={18} />
+                            <h3 className="font-bold text-gray-900 dark:text-white">
+                              {feriado.fecha}
+                            </h3>
+                          </div>
+                          <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                            {feriado.festejo}
+                          </p>
                         </div>
-                      </td>
-                      <td>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">
-                          {feriado.festejo}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="badge badge-info">
-                          {feriado.dia}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {feriado.periodo || 'N/A'}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="flex items-center space-x-2">
+                      </div>
+
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200">
+                            {feriado.dia}
+                          </span>
+                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                            {feriado.periodo || anioFiltro}
+                          </span>
+                        </div>
+                        <div className="flex gap-2">
                           <button
                             onClick={() => abrirModal(feriado)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                            className="p-1.5 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
                             title="Editar"
                           >
-                            <FiEdit />
+                            <FiEdit size={16} />
                           </button>
                           <button
                             onClick={() => handleEliminar(feriado.id, feriado.festejo)}
-                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                            className="p-1.5 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
                             title="Eliminar"
                           >
-                            <FiTrash2 />
+                            <FiTrash2 size={16} />
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
         </div>
 
         {/* Modal de Crear/Editar */}
         {modalAbierto && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-secondary-dark rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-2 sm:p-4 overflow-y-auto">
+            <div className="bg-white dark:bg-secondary-dark rounded-lg shadow-xl max-w-2xl w-full my-4 sm:my-8 max-h-[95vh] overflow-y-auto">
               {/* Header del Modal */}
-              <div className="flex justify-between items-center p-6 border-b border-gray-200 dark:border-gray-700">
-                <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
+              <div className="flex justify-between items-center p-4 sm:p-6 border-b border-gray-200 dark:border-gray-700">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
                   {feriadoEditando ? 'Editar Feriado' : 'Nuevo Feriado'}
                 </h2>
                 <button
                   onClick={cerrarModal}
                   className="p-2 hover:bg-gray-100 dark:hover:bg-ternary-dark rounded-lg transition-colors"
                 >
-                  <FiX className="text-2xl text-gray-500" />
+                  <FiX className="text-lg sm:text-2xl text-gray-500" />
                 </button>
               </div>
 
               {/* Formulario */}
-              <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              <form onSubmit={handleSubmit} className="p-4 sm:p-6 space-y-4 sm:space-y-6">
                 {/* Fecha */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -296,7 +353,7 @@ export default function Feriados() {
                     type="text"
                     value={formData.fecha}
                     onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
-                    className="input w-full"
+                    className="input w-full text-sm sm:text-base"
                     placeholder="DD/MM/YYYY"
                     required
                   />
@@ -314,7 +371,7 @@ export default function Feriados() {
                     type="text"
                     value={formData.festejo}
                     onChange={(e) => setFormData({ ...formData, festejo: e.target.value })}
-                    className="input w-full"
+                    className="input w-full text-sm sm:text-base"
                     placeholder="Ej: Navidad, Año Nuevo, Día del Trabajador"
                     required
                   />
@@ -322,12 +379,11 @@ export default function Feriados() {
 
                 {/* Día */}
                 <div>
-                  <Select
-                    label="Día de la Semana"
+                  <CustomSelect
+                    label="Día de la Semana *"
                     value={formData.dia}
                     onChange={(e) => setFormData({ ...formData, dia: e.target.value })}
                     options={[
-                      { value: '', label: 'Seleccionar día...' },
                       { value: 'Lunes', label: 'Lunes' },
                       { value: 'Martes', label: 'Martes' },
                       { value: 'Miércoles', label: 'Miércoles' },
@@ -336,7 +392,6 @@ export default function Feriados() {
                       { value: 'Sábado', label: 'Sábado' },
                       { value: 'Domingo', label: 'Domingo' }
                     ]}
-                    required
                     containerClassName="mb-0"
                   />
                 </div>
@@ -350,7 +405,7 @@ export default function Feriados() {
                     type="text"
                     value={formData.periodo}
                     onChange={(e) => setFormData({ ...formData, periodo: e.target.value })}
-                    className="input w-full"
+                    className="input w-full text-sm sm:text-base"
                     placeholder="Se extraerá automáticamente de la fecha"
                   />
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -359,17 +414,17 @@ export default function Feriados() {
                 </div>
 
                 {/* Botones */}
-                <div className="flex space-x-3 pt-4">
+                <div className="flex flex-col sm:flex-row gap-3 pt-4">
                   <button
                     type="submit"
-                    className="btn-primary flex-1"
+                    className="btn-primary flex-1 text-sm sm:text-base py-2 sm:py-3"
                   >
                     {feriadoEditando ? 'Actualizar' : 'Crear'} Feriado
                   </button>
                   <button
                     type="button"
                     onClick={cerrarModal}
-                    className="btn-secondary flex-1"
+                    className="btn-secondary flex-1 text-sm sm:text-base py-2 sm:py-3"
                   >
                     Cancelar
                   </button>

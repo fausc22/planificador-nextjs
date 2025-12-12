@@ -81,26 +81,6 @@ export function useEmpleados() {
     }
   }, [cargarEmpleados]);
 
-  // Actualizar foto de empleado
-  const actualizarFotoEmpleado = useCallback(async (id, archivoFoto) => {
-    try {
-      const formData = new FormData();
-      formData.append('foto', archivoFoto);
-      
-      // NO establecer Content-Type manualmente - axios lo hace automáticamente para FormData
-      const response = await apiClient.patch(`/empleados/${id}/foto`, formData);
-      
-      if (response.data.success) {
-        toast.success('Foto actualizada exitosamente');
-        await cargarEmpleados();
-        return response.data;
-      }
-    } catch (err) {
-      console.error('Error al actualizar foto:', err);
-      toast.error(err.response?.data?.message || 'Error al actualizar foto');
-      throw err;
-    }
-  }, [cargarEmpleados]);
 
   // Eliminar empleado
   const eliminarEmpleado = useCallback(async (id) => {
@@ -131,7 +111,6 @@ export function useEmpleados() {
     cargarEmpleados,
     crearEmpleado,
     actualizarEmpleado,
-    actualizarFotoEmpleado,
     eliminarEmpleado
   };
 }

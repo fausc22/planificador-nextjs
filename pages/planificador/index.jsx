@@ -9,7 +9,7 @@ import ModalPDF from '../../components/planificador/ModalPDF';
 import WeeklyView from '../../components/WeeklyView';
 import ShiftSelector from '../../components/ShiftSelector';
 import Spinner from '../../components/ui/Spinner';
-import Select from '../../components/ui/Select';
+import CustomSelect from '../../components/ui/CustomSelect';
 import { usePlanificador } from '../../hooks/usePlanificador';
 import { usePlanificadorFilters } from '../../hooks/usePlanificadorFilters';
 import { useModal } from '../../hooks/useModal';
@@ -223,6 +223,7 @@ export default function Planificador() {
             mesActual={mes}
             anioActual={anio}
             loading={loading}
+            generandoPdf={generandoPdf}
             onCambiarMes={cambiarMes}
             onCambiarMesDirecto={cambiarMesDirecto}
             onCambiarAnio={cambiarAnio}
@@ -275,7 +276,7 @@ export default function Planificador() {
           {/* Selector de empleado para móvil */}
           {vistaMobile && planificador?.empleados && (
             <div className="card mb-4">
-              <Select
+              <CustomSelect
                 label="📱 Seleccionar Empleado"
                 value={empleadoSeleccionadoMovil || ''}
                 onChange={(e) => setEmpleadoSeleccionadoMovil(e.target.value)}

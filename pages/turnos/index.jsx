@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
 import { turnosAPI } from '../../utils/api';
-import Select from '../../components/ui/Select';
+import CustomSelect from '../../components/ui/CustomSelect';
 import { FiPlus, FiEdit, FiTrash2, FiClock, FiX, FiSave, FiAlertCircle } from 'react-icons/fi';
 import Loading from '../../components/Loading';
 import EmptyState from '../../components/EmptyState';
@@ -498,8 +498,8 @@ export default function Turnos() {
 
                 {/* Hora inicio */}
                 <div>
-                  <Select
-                    label="Hora Inicio"
+                  <CustomSelect
+                    label="Hora Inicio *"
                     value={formData.horaInicio}
                     onChange={(e) => {
                       setFormData(prev => ({ ...prev, horaInicio: e.target.value }));
@@ -511,10 +511,9 @@ export default function Turnos() {
                       value: i.toString(),
                       label: `${String(i).padStart(2, '0')}:00 hs`
                     }))}
-                    placeholder="Seleccionar..."
-                    required
                     error={errores.horaInicio}
-                    className={`text-sm sm:text-base ${errores.horaInicio ? 'border-red-500' : ''}`}
+                    containerClassName="mb-0"
+                    className="text-sm sm:text-base"
                   />
                   {errores.horaInicio && (
                     <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">
@@ -526,8 +525,8 @@ export default function Turnos() {
 
                 {/* Hora fin */}
                 <div>
-                  <Select
-                    label="Hora Fin"
+                  <CustomSelect
+                    label="Hora Fin *"
                     value={formData.horaFin}
                     onChange={(e) => {
                       setFormData(prev => ({ ...prev, horaFin: e.target.value }));
@@ -539,11 +538,9 @@ export default function Turnos() {
                       value: i.toString(),
                       label: i === 0 ? '00:00 hs (medianoche)' : `${String(i).padStart(2, '0')}:00 hs`
                     }))}
-                    placeholder="Seleccionar..."
-                    required
                     error={errores.horaFin}
-                    className={`text-sm sm:text-base ${errores.horaFin ? 'border-red-500' : ''}`}
-                    helperText="Si cruza medianoche (ej: 20 a 02), el sistema lo calcula automáticamente"
+                    containerClassName="mb-0"
+                    className="text-sm sm:text-base"
                   />
                   {errores.horaFin && (
                     <p className="mt-1 text-sm text-red-600 dark:text-red-400 flex items-center gap-1">

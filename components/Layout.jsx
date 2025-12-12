@@ -169,8 +169,8 @@ export default function Layout({ children }) {
       )}
 
       {/* Contenido Principal */}
-      <main className="lg:ml-64 mt-16 min-h-[calc(100vh-4rem)]">
-        <div className="animate-fade-in">
+      <main className="lg:ml-64 mt-16 min-h-[calc(100vh-4rem)] overflow-x-hidden">
+        <div className="animate-fade-in w-full max-w-full">
           {children}
         </div>
       </main>

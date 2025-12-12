@@ -4,6 +4,7 @@ import Head from 'next/head';
 import Layout from '../../components/Layout';
 import Loading from '../../components/Loading';
 import EmptyState from '../../components/EmptyState';
+import CustomSelect from '../../components/ui/CustomSelect';
 import { FiDollarSign, FiPlus, FiEdit, FiTrash2, FiX, FiTrendingUp, FiTrendingDown, FiUser } from 'react-icons/fi';
 import { apiClient } from '../../utils/api';
 import toast from 'react-hot-toast';
@@ -247,73 +248,67 @@ export default function PagosExtras() {
       <Layout>
         <div className="container-custom py-8">
           {/* Header */}
-          <div className="mb-6 flex justify-between items-center">
+          <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900 dark:text-white">
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
                 Pagos Extras
               </h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-1">
                 Gestión de bonificaciones y deducciones
               </p>
             </div>
             <button
               onClick={() => abrirModal()}
-              className="btn-primary flex items-center space-x-2"
+              className="btn-primary flex items-center justify-center space-x-2 w-full sm:w-auto"
             >
               <FiPlus />
-              <span>Nuevo Pago Extra</span>
+              <span className="sm:inline">Nuevo Pago Extra</span>
             </button>
           </div>
 
           {/* Filtros */}
-          <div className="card mb-6">
+          <div className="card mb-4 sm:mb-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Año
-                </label>
-                <select
+                <CustomSelect
+                  label="Año"
                   value={anio}
                   onChange={(e) => setAnio(parseInt(e.target.value))}
-                  className="input"
-                >
-                  {[2024, 2025, 2026].map(a => (
-                    <option key={a} value={a}>{a}</option>
-                  ))}
-                </select>
+                  options={[2024, 2025, 2026].map(a => ({
+                    value: a,
+                    label: a.toString()
+                  }))}
+                  containerClassName="mb-0"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Mes
-                </label>
-                <select
+                <CustomSelect
+                  label="Mes"
                   value={mes}
                   onChange={(e) => setMes(parseInt(e.target.value))}
-                  className="input"
-                >
-                  {MESES.map((m, idx) => (
-                    <option key={idx} value={idx + 1}>{m}</option>
-                  ))}
-                </select>
+                  options={MESES.map((m, idx) => ({
+                    value: idx + 1,
+                    label: m
+                  }))}
+                  containerClassName="mb-0"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Empleado
-                </label>
-                <select 
-                  className="input"
+                <CustomSelect
+                  label="Empleado"
                   value={empleadoSeleccionado}
                   onChange={(e) => setEmpleadoSeleccionado(e.target.value)}
-                >
-                  <option value="">Todos los empleados</option>
-                  {empleados.map((emp) => (
-                    <option key={emp.id} value={`${emp.nombre} ${emp.apellido}`}>
-                      {emp.nombre} {emp.apellido}
-                    </option>
-                  ))}
-                </select>
+                  options={[
+                    { value: '', label: 'Todos los empleados' },
+                    ...empleados.map((emp) => ({
+                      value: `${emp.nombre} ${emp.apellido}`,
+                      label: `${emp.nombre} ${emp.apellido}`
+                    }))
+                  ]}
+                  containerClassName="mb-0"
+                />
               </div>
             </div>
           </div>
@@ -380,7 +375,7 @@ export default function PagosExtras() {
           )}
 
           {/* Tabla de Pagos Extras */}
-          <div className="card overflow-x-auto">
+          <div className="card">
             {loading ? (
               <Loading />
             ) : extras.length === 0 ? (
@@ -390,76 +385,157 @@ export default function PagosExtras() {
                 description="No se encontraron pagos extras para el período seleccionado"
               />
             ) : (
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Empleado</th>
-                    <th>Tipo</th>
-                    <th>Categoría</th>
-                    <th>Monto</th>
-                    <th>Descripción</th>
-                    <th>Acciones</th>
-                  </tr>
-                </thead>
-                <tbody>
+              <>
+                {/* Vista desktop - Tabla */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="table">
+                    <thead>
+                      <tr>
+                        <th>Empleado</th>
+                        <th>Tipo</th>
+                        <th>Categoría</th>
+                        <th>Monto</th>
+                        <th>Descripción</th>
+                        <th>Acciones</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {extras.map((extra) => (
+                        <tr key={extra.id}>
+                          <td>
+                            <div className="flex items-center space-x-2">
+                              <FiUser className="text-gray-400" />
+                              <span>{extra.nombre_empleado}</span>
+                            </div>
+                          </td>
+                          <td>
+                            {extra.detalle === 1 ? (
+                              <span className="badge badge-success inline-flex items-center space-x-1">
+                                <FiTrendingUp />
+                                <span>Bonificación</span>
+                              </span>
+                            ) : (
+                              <span className="badge badge-danger inline-flex items-center space-x-1">
+                                <FiTrendingDown />
+                                <span>Deducción</span>
+                              </span>
+                            )}
+                          </td>
+                          <td>
+                            <span className="font-medium text-gray-900 dark:text-gray-100">
+                              {extra.categoria}
+                            </span>
+                          </td>
+                          <td>
+                            <span className={`font-bold ${extra.detalle === 1 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                              {formatearDinero(extra.monto)}
+                            </span>
+                          </td>
+                          <td>
+                            <span className="text-sm text-gray-600 dark:text-gray-400">
+                              {extra.descripcion}
+                            </span>
+                          </td>
+                          <td>
+                            <div className="flex items-center space-x-2">
+                              <button
+                                onClick={() => abrirModal(extra)}
+                                className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                                title="Editar"
+                              >
+                                <FiEdit />
+                              </button>
+                              <button
+                                onClick={() => abrirModalEliminar(extra)}
+                                className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                                title="Eliminar"
+                              >
+                                <FiTrash2 />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Vista móvil - Cards */}
+                <div className="md:hidden space-y-3">
                   {extras.map((extra) => (
-                    <tr key={extra.id}>
-                      <td>
-                        <div className="flex items-center space-x-2">
-                          <FiUser className="text-gray-400" />
-                          <span>{extra.nombre_empleado}</span>
+                    <div 
+                      key={extra.id} 
+                      className={`border-2 rounded-lg p-4 ${
+                        extra.detalle === 1 
+                          ? 'border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-900/10' 
+                          : 'border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-900/10'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center space-x-2 mb-2">
+                            <FiUser className="text-gray-400 flex-shrink-0" />
+                            <h3 className="font-bold text-gray-900 dark:text-white truncate">
+                              {extra.nombre_empleado}
+                            </h3>
+                          </div>
+                          <div className="mb-2">
+                            {extra.detalle === 1 ? (
+                              <span className="inline-flex items-center space-x-1 text-xs px-2 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
+                                <FiTrendingUp className="text-xs" />
+                                <span>Bonificación</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center space-x-1 text-xs px-2 py-1 rounded-full bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
+                                <FiTrendingDown className="text-xs" />
+                                <span>Deducción</span>
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </td>
-                      <td>
-                        {extra.detalle === 1 ? (
-                          <span className="badge badge-success inline-flex items-center space-x-1">
-                            <FiTrendingUp />
-                            <span>Bonificación</span>
-                          </span>
-                        ) : (
-                          <span className="badge badge-danger inline-flex items-center space-x-1">
-                            <FiTrendingDown />
-                            <span>Deducción</span>
-                          </span>
-                        )}
-                      </td>
-                      <td>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">
-                          {extra.categoria}
-                        </span>
-                      </td>
-                      <td>
-                        <span className={`font-bold ${extra.detalle === 1 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
-                          {formatearDinero(extra.monto)}
-                        </span>
-                      </td>
-                      <td>
-                        <span className="text-sm text-gray-600 dark:text-gray-400">
-                          {extra.descripcion}
-                        </span>
-                      </td>
-                      <td>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex gap-1 ml-2 flex-shrink-0">
                           <button
                             onClick={() => abrirModal(extra)}
-                            className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded transition-colors"
+                            className="p-2 text-blue-600 hover:bg-blue-100 dark:hover:bg-blue-900/30 rounded-lg transition-colors"
                             title="Editar"
                           >
-                            <FiEdit />
+                            <FiEdit size={18} />
                           </button>
                           <button
                             onClick={() => abrirModalEliminar(extra)}
-                            className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors"
+                            className="p-2 text-red-600 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"
                             title="Eliminar"
                           >
-                            <FiTrash2 />
+                            <FiTrash2 size={18} />
                           </button>
                         </div>
-                      </td>
-                    </tr>
+                      </div>
+                      
+                      <div className="space-y-2 text-sm">
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600 dark:text-gray-400">Categoría:</span>
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {extra.categoria}
+                          </span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-gray-600 dark:text-gray-400">Monto:</span>
+                          <span className={`font-bold text-lg ${extra.detalle === 1 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                            {formatearDinero(extra.monto)}
+                          </span>
+                        </div>
+                        {extra.descripcion && (
+                          <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
+                            <p className="text-gray-600 dark:text-gray-400 text-xs">
+                              {extra.descripcion}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   ))}
-                </tbody>
-              </table>
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -485,10 +561,9 @@ export default function PagosExtras() {
               <form onSubmit={handleSubmit} className="p-6 space-y-6">
                 {/* Empleado */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Empleado <span className="text-red-500">*</span>
-                  </label>
-                  <select
+                  <CustomSelect
+                    label="Empleado"
+                    required
                     value={formData.nombre_empleado}
                     onChange={(e) => {
                       setFormData({ ...formData, nombre_empleado: e.target.value });
@@ -496,35 +571,31 @@ export default function PagosExtras() {
                         setErrores({ ...errores, nombre_empleado: null });
                       }
                     }}
-                    className={`input w-full ${errores.nombre_empleado ? 'border-red-500' : ''}`}
-                    required
-                  >
-                    <option value="">Seleccionar empleado...</option>
-                    {empleados.map((emp) => (
-                      <option key={emp.id} value={`${emp.nombre} ${emp.apellido}`}>
-                        {emp.nombre} {emp.apellido}
-                      </option>
-                    ))}
-                  </select>
-                  {errores.nombre_empleado && (
-                    <p className="mt-1 text-sm text-red-600 dark:text-red-400">{errores.nombre_empleado}</p>
-                  )}
+                    options={[
+                      { value: '', label: 'Seleccionar empleado...' },
+                      ...empleados.map((emp) => ({
+                        value: `${emp.nombre} ${emp.apellido}`,
+                        label: `${emp.nombre} ${emp.apellido}`
+                      }))
+                    ]}
+                    error={errores.nombre_empleado}
+                    containerClassName="mb-0"
+                  />
                 </div>
 
                 {/* Tipo (Detalle) */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    Tipo <span className="text-red-500">*</span>
-                  </label>
-                  <select
+                  <CustomSelect
+                    label="Tipo"
+                    required
                     value={formData.detalle}
                     onChange={(e) => setFormData({ ...formData, detalle: parseInt(e.target.value) })}
-                    className="input w-full"
-                    required
-                  >
-                    <option value={1}>Bonificación (+)</option>
-                    <option value={2}>Deducción (-)</option>
-                  </select>
+                    options={[
+                      { value: 1, label: 'Bonificación (+)' },
+                      { value: 2, label: 'Deducción (-)' }
+                    ]}
+                    containerClassName="mb-0"
+                  />
                 </div>
 
                 {/* Categoría */}

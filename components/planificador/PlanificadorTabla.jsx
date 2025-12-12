@@ -1,6 +1,6 @@
 // components/planificador/PlanificadorTabla.jsx - Tabla del planificador
 import { FiEdit2, FiSave, FiX } from 'react-icons/fi';
-import Select from '../ui/Select';
+import CustomSelect from '../ui/CustomSelect';
 
 export default function PlanificadorTabla({
   planificador,
@@ -72,7 +72,7 @@ export default function PlanificadorTabla({
                   <td key={`${fecha.fecha}-${empleado}`} className="px-2 py-2">
                     {estaEditando ? (
                       <div className={vistaMobile ? "flex flex-col gap-2" : "flex items-center gap-1"}>
-                        <Select
+                        <CustomSelect
                           value={turnoSeleccionado}
                           onChange={(e) => onCambiarTurnoSeleccionado(e.target.value)}
                           options={turnosDisponibles.map((t) => ({

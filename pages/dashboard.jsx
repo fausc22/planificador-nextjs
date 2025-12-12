@@ -131,7 +131,7 @@ export default function Dashboard() {
       </Head>
 
       <Layout>
-        <div className="container-custom py-8">
+        <div className="container-custom py-8 w-full max-w-full overflow-x-hidden">
           {/* Bienvenida */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">

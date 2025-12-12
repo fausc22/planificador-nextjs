@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import Layout from '../../components/Layout';
-import { empleadosAPI } from '../../utils/api';
+import { empleadosAPI, apiClient } from '../../utils/api';
 import { useEmpleadoForm } from '../../hooks/useEmpleadoForm';
 import Select from '../../components/ui/Select';
 import { FiPlus, FiEdit, FiTrash2, FiSearch, FiUser, FiMail, FiCalendar, FiDollarSign, FiX, FiSave, FiUpload, FiGrid, FiList, FiAlertCircle, FiCheck } from 'react-icons/fi';
@@ -113,39 +113,34 @@ export default function Empleados() {
         return;
       }
 
-      // Construir datos exactamente como en logueos - objeto simple
-      // Asegurar que todos los valores estén definidos (no undefined)
+      // Construir datos EXACTAMENTE como en logueos - objeto simple y directo
+      // Usar los valores directamente del formData sin conversiones complejas
       const datosEnviar = {
-        nombre: formData.nombre !== undefined ? String(formData.nombre).trim() : '',
-        apellido: formData.apellido !== undefined ? String(formData.apellido).trim() : '',
-        mail: formData.mail !== undefined ? String(formData.mail).trim() : '',
-        fecha_ingreso: formData.fecha_ingreso !== undefined ? String(formData.fecha_ingreso).trim() : '',
-        hora_normal: formData.hora_normal !== undefined ? String(formData.hora_normal).trim() : '0',
-        antiguedad: formData.antiguedad !== undefined ? (parseFloat(formData.antiguedad) || 0) : 0,
-        dia_vacaciones: formData.dia_vacaciones !== undefined ? (parseFloat(formData.dia_vacaciones) || 14) : 14,
-        horas_vacaciones: formData.horas_vacaciones !== undefined ? (parseFloat(formData.horas_vacaciones) || 0) : 0
+        nombre: formData.nombre,
+        apellido: formData.apellido,
+        mail: formData.mail,
+        fecha_ingreso: formData.fecha_ingreso,
+        hora_normal: formData.hora_normal,
+        antiguedad: formData.antiguedad || 0,
+        dia_vacaciones: formData.dia_vacaciones || 14,
+        horas_vacaciones: formData.horas_vacaciones || 0
       };
-      
-      // Validar que los campos requeridos no estén vacíos
-      if (!datosEnviar.nombre || !datosEnviar.apellido || !datosEnviar.mail || !datosEnviar.fecha_ingreso || !datosEnviar.hora_normal) {
-        toast.error('Completa todos los campos obligatorios');
-        return;
-      }
 
       // Si hay cambio de tarifa, agregar la opción seleccionada
       if (empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior)) {
         datosEnviar.aplicar_cambio_tarifa = opcionAplicacion;
       }
 
-      console.log('📤 [guardarEmpleado] Enviando datos (patrón logueos):', datosEnviar);
       console.log('📤 [guardarEmpleado] formData original:', formData);
+      console.log('📤 [guardarEmpleado] datosEnviar construido:', datosEnviar);
+      console.log('📤 [guardarEmpleado] JSON.stringify:', JSON.stringify(datosEnviar));
 
-      // Crear o actualizar empleado - igual que logueos
+      // Crear o actualizar empleado - usar apiClient directamente como en logueos
       if (empleadoEditando) {
-        const response = await empleadosAPI.actualizar(empleadoEditando.id, datosEnviar);
+        const response = await apiClient.put(`/empleados/${empleadoEditando.id}`, datosEnviar);
         toast.success(response.data.message || 'Empleado actualizado exitosamente');
       } else {
-        const response = await empleadosAPI.crear(datosEnviar);
+        const response = await apiClient.post('/empleados', datosEnviar);
         if (response.data.turnosGenerados) {
           toast.success('Empleado creado con turnos 2024-2027 generados');
         } else {

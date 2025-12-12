@@ -115,19 +115,28 @@ export default function Empleados() {
 
   const guardarEmpleado = async () => {
     try {
-      // Construir datos con fotoBase64 incluido si existe
-      const datosEnviar = await construirDatos();
+      // Construir datos sin foto
+      const datosEnviar = construirDatos();
+
+      // Validar que los datos no tengan undefined
+      const camposRequeridos = ['nombre', 'apellido', 'mail', 'fecha_ingreso', 'hora_normal'];
+      const camposFaltantes = camposRequeridos.filter(campo => !datosEnviar[campo] || datosEnviar[campo] === '');
+      
+      if (camposFaltantes.length > 0) {
+        toast.error(`Faltan campos obligatorios: ${camposFaltantes.join(', ')}`);
+        return;
+      }
 
       // Si hay cambio de tarifa, agregar la opción seleccionada
       if (empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior)) {
         datosEnviar.aplicar_cambio_tarifa = opcionAplicacion;
       }
 
-      console.log('📤 [guardarEmpleado] Enviando datos del empleado (JSON con fotoBase64 si existe)');
+      console.log('📤 [guardarEmpleado] Enviando datos del empleado (JSON sin foto)');
       console.log('📤 [guardarEmpleado] Es edición:', !!empleadoEditando);
-      console.log('📤 [guardarEmpleado] Tiene fotoBase64:', !!datosEnviar.fotoBase64);
+      console.log('📤 [guardarEmpleado] Datos a enviar:', datosEnviar);
 
-      // Crear o actualizar empleado (todo en un solo request JSON)
+      // Crear o actualizar empleado
       if (empleadoEditando) {
         console.log(`📤 [guardarEmpleado] Actualizando empleado ID: ${empleadoEditando.id}`);
         const response = await empleadosAPI.actualizar(empleadoEditando.id, datosEnviar);

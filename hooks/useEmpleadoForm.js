@@ -173,31 +173,39 @@ export function useEmpleadoForm(empleadoInicial = null) {
   };
 
   /**
-   * Construye un objeto JSON con todos los campos del formulario (incluyendo fotoBase64 si existe)
-   * @returns {Promise<Object>} - Promise que resuelve con el objeto listo para enviar
+   * Construye un objeto JSON con todos los campos del formulario (SIN foto por ahora)
+   * @returns {Object} - Objeto listo para enviar
    */
-  const construirDatos = async () => {
+  const construirDatos = () => {
+    // Asegurar que todos los valores estén definidos y no sean undefined
     const datos = {
-      nombre: String(formData.nombre || '').trim(),
-      apellido: String(formData.apellido || '').trim(),
-      mail: String(formData.mail || '').trim(),
-      fecha_ingreso: String(formData.fecha_ingreso || '').trim(),
-      hora_normal: String(formData.hora_normal || '0'),
-      antiguedad: formData.antiguedad ?? 0,
-      dia_vacaciones: formData.dia_vacaciones ?? 14,
-      horas_vacaciones: formData.horas_vacaciones ?? 0
+      nombre: formData.nombre !== undefined && formData.nombre !== null 
+        ? String(formData.nombre).trim() 
+        : '',
+      apellido: formData.apellido !== undefined && formData.apellido !== null 
+        ? String(formData.apellido).trim() 
+        : '',
+      mail: formData.mail !== undefined && formData.mail !== null 
+        ? String(formData.mail).trim() 
+        : '',
+      fecha_ingreso: formData.fecha_ingreso !== undefined && formData.fecha_ingreso !== null 
+        ? String(formData.fecha_ingreso).trim() 
+        : '',
+      hora_normal: formData.hora_normal !== undefined && formData.hora_normal !== null 
+        ? String(formData.hora_normal).trim() 
+        : '0',
+      antiguedad: formData.antiguedad !== undefined && formData.antiguedad !== null 
+        ? (parseFloat(formData.antiguedad) || 0) 
+        : 0,
+      dia_vacaciones: formData.dia_vacaciones !== undefined && formData.dia_vacaciones !== null 
+        ? (parseFloat(formData.dia_vacaciones) || 14) 
+        : 14,
+      horas_vacaciones: formData.horas_vacaciones !== undefined && formData.horas_vacaciones !== null 
+        ? (parseFloat(formData.horas_vacaciones) || 0) 
+        : 0
     };
 
-    // Convertir foto a base64 si existe
-    if (archivoFoto) {
-      try {
-        datos.fotoBase64 = await convertirArchivoABase64(archivoFoto);
-      } catch (error) {
-        console.error('Error convirtiendo foto a base64:', error);
-        throw new Error('Error al procesar la imagen');
-      }
-    }
-
+    console.log('📤 [construirDatos] Datos construidos:', datos);
     return datos;
   };
 

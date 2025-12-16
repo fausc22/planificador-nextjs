@@ -78,8 +78,10 @@ export default function Empleados() {
         return;
       }
 
-      // Si está editando y cambió la hora_normal, mostrar modal de opciones
-      if (empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior)) {
+      // Si está editando y cambió la hora_normal, mostrar modal de opciones (solo si el modal no está ya abierto)
+      const hayCambioTarifa = empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior);
+      
+      if (hayCambioTarifa && !modalCambioTarifa) {
         setModalCambioTarifa(true);
         return;
       }
@@ -87,8 +89,8 @@ export default function Empleados() {
       // Obtener datos del formulario
       const datosEnviar = obtenerDatos();
 
-      // Si hay cambio de tarifa, agregar la opción seleccionada
-      if (empleadoEditando && horaNormalAnterior && parseFloat(formData.hora_normal) !== parseFloat(horaNormalAnterior)) {
+      // Si hay cambio de tarifa y el modal ya está abierto (usuario seleccionó opción), agregar la opción seleccionada
+      if (hayCambioTarifa && modalCambioTarifa) {
         datosEnviar.aplicar_cambio_tarifa = opcionAplicacion;
       }
 

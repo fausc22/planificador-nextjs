@@ -60,29 +60,52 @@ export const usePlanificadorFilters = () => {
   }, [updateUrl]);
 
   const cambiarMes = useCallback((direccion) => {
-    if (direccion === null || direccion === undefined) return;
+    if (direccion === null || direccion === undefined || direccion === 0) return;
     
+    // Usar el estado actual para calcular el nuevo mes/año
     let nuevoMesCalculado = mes + direccion;
     let nuevoAnioCalculado = anio;
 
+    // Manejar desbordamiento: solo cambiar año cuando se pasa de diciembre a enero o viceversa
     if (nuevoMesCalculado > 12) {
       nuevoMesCalculado = 1;
-      nuevoAnioCalculado++;
+      nuevoAnioCalculado = anio + 1;
     } else if (nuevoMesCalculado < 1) {
       nuevoMesCalculado = 12;
-      nuevoAnioCalculado--;
+      nuevoAnioCalculado = anio - 1;
     }
 
-    setMes(nuevoMesCalculado);
-    if (nuevoAnioCalculado !== anio) {
-      setAnio(nuevoAnioCalculado);
-    }
-  }, [mes, anio, setMes, setAnio]);
+    // Actualizar ambos valores de forma atómica
+    setMesState(nuevoMesCalculado);
+    setAnioState(nuevoAnioCalculado);
+    updateUrl({ 
+      mes: nuevoMesCalculado.toString(), 
+      anio: nuevoAnioCalculado.toString() 
+    });
+  }, [mes, anio, updateUrl]);
 
   const cambiarMesDirecto = useCallback((nuevoMes) => {
-    if (nuevoMes < 1 || nuevoMes > 12) return;
-    setMes(nuevoMes);
-  }, [setMes]);
+    if (nuevoMes < 1 || nuevoMes > 12 || nuevoMes === mes) return;
+    
+    // Si el mes cambia de diciembre (12) a enero (1), incrementar año
+    // Si el mes cambia de enero (1) a diciembre (12), decrementar año
+    // Solo cambiar año cuando hay un salto lógico (diciembre->enero o enero->diciembre)
+    let nuevoAnio = anio;
+    if (mes === 12 && nuevoMes === 1) {
+      nuevoAnio = anio + 1;
+    } else if (mes === 1 && nuevoMes === 12) {
+      nuevoAnio = anio - 1;
+    }
+    // Para cualquier otro cambio de mes, mantener el año actual
+    
+    // Actualizar ambos valores de forma atómica
+    setMesState(nuevoMes);
+    setAnioState(nuevoAnio);
+    updateUrl({ 
+      mes: nuevoMes.toString(), 
+      anio: nuevoAnio.toString() 
+    });
+  }, [mes, anio, updateUrl]);
 
   const cambiarAnio = useCallback((nuevoAnio) => {
     setAnio(nuevoAnio);

@@ -59,9 +59,11 @@ apiClient.interceptors.request.use(
         console.error('❌ [interceptor] Convirtiendo FormData a objeto JSON');
         // Convertir FormData a objeto
         const obj = {};
-        config.data.forEach((value, key) => {
-          obj[key] = value;
-        });
+        if (config.data && typeof config.data.forEach === 'function') {
+          config.data.forEach((value, key) => {
+            obj[key] = value;
+          });
+        }
         config.data = obj;
       }
       

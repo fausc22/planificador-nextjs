@@ -89,16 +89,16 @@ export function useEmpleadoForm(empleadoInicial = null) {
       setErrors({});
       return { valido: true, errores: [] };
     } catch (error) {
-      if (error.name === 'ZodError') {
+      if (error.name === 'ZodError' && error.errors && Array.isArray(error.errors)) {
         const erroresFormateados = {};
         error.errors.forEach(err => {
-          const path = err.path[0];
-          erroresFormateados[path] = err.message;
+          const path = err.path && err.path.length > 0 ? err.path[0] : 'unknown';
+          erroresFormateados[path] = err.message || 'Error de validación';
         });
         setErrors(erroresFormateados);
         return {
           valido: false,
-          errores: error.errors.map(e => e.message)
+          errores: error.errors.map(e => e.message || 'Error de validación')
         };
       }
       return {

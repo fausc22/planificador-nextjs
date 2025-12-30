@@ -36,7 +36,7 @@ export function useEmpleados() {
       
       const response = await empleadosAPI.crear(datosValidados);
       
-      if (response.data.success) {
+      if (response && response.data && response.data.success) {
         toast.success(response.data.turnosGenerados 
           ? 'Empleado creado con turnos 2024-2027 generados'
           : 'Empleado creado exitosamente'
@@ -45,13 +45,16 @@ export function useEmpleados() {
         return response.data;
       }
     } catch (err) {
-      if (err.name === 'ZodError') {
+      // Manejar errores de validación Zod
+      if (err && err.name === 'ZodError' && err.errors && Array.isArray(err.errors) && err.errors.length > 0) {
         const primerError = err.errors[0];
         toast.error(primerError?.message || 'Datos inválidos');
         throw err;
       }
+      // Manejar errores del servidor
       console.error('Error al crear empleado:', err);
-      toast.error(err.response?.data?.message || 'Error al crear empleado');
+      const errorMessage = err?.response?.data?.message || err?.message || 'Error al crear empleado';
+      toast.error(errorMessage);
       throw err;
     }
   }, [cargarEmpleados]);
@@ -64,19 +67,22 @@ export function useEmpleados() {
       
       const response = await empleadosAPI.actualizar(id, datosValidados);
       
-      if (response.data.success) {
+      if (response && response.data && response.data.success) {
         toast.success(response.data.message || 'Empleado actualizado exitosamente');
         await cargarEmpleados();
         return response.data;
       }
     } catch (err) {
-      if (err.name === 'ZodError') {
+      // Manejar errores de validación Zod
+      if (err && err.name === 'ZodError' && err.errors && Array.isArray(err.errors) && err.errors.length > 0) {
         const primerError = err.errors[0];
         toast.error(primerError?.message || 'Datos inválidos');
         throw err;
       }
+      // Manejar errores del servidor
       console.error('Error al actualizar empleado:', err);
-      toast.error(err.response?.data?.message || 'Error al actualizar empleado');
+      const errorMessage = err?.response?.data?.message || err?.message || 'Error al actualizar empleado';
+      toast.error(errorMessage);
       throw err;
     }
   }, [cargarEmpleados]);

@@ -105,6 +105,14 @@ export default function Empleados() {
     } catch (error) {
       // Los errores ya se manejan en los hooks
       console.error('Error al guardar empleado:', error);
+      // Asegurar que el error se maneje correctamente incluso si tiene estructura inesperada
+      if (error && error.response && error.response.data) {
+        const errorData = error.response.data;
+        // Si hay errores de validación, asegurarse de que sean un array
+        if (errorData.errors && !Array.isArray(errorData.errors)) {
+          console.warn('Error: errors no es un array:', errorData.errors);
+        }
+      }
     }
   };
 

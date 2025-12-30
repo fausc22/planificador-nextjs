@@ -116,12 +116,24 @@ export default function Dashboard() {
     }
   }, [loading, router]);
 
+  // Redirigir si no hay usuario después de cargar
+  useEffect(() => {
+    if (!loading && !user) {
+      router.replace('/login');
+    }
+  }, [loading, user, router]);
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="spinner"></div>
       </div>
     );
+  }
+
+  // No renderizar si no hay usuario (evitar error mientras redirige)
+  if (!user) {
+    return null;
   }
 
   return (
@@ -135,7 +147,7 @@ export default function Dashboard() {
           {/* Bienvenida */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">
-              ¡Bienvenido, {user.nombre}! 👋
+              ¡Bienvenido, {user?.nombre || 'Usuario'}! 👋
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
               Panel de control del sistema de planificación

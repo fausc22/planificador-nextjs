@@ -118,7 +118,11 @@ export default function NotificacionesLogueos() {
       }
     } else {
       // Si no tiene ID, solo mostrar mensaje (notificación temporal)
-      toast.info('Esta notificación se eliminará automáticamente cuando se registre el logueo correspondiente');
+      // Usar toast() en lugar de toast.info() porque react-hot-toast 2.4.1 no tiene toast.info
+      toast('Esta notificación se eliminará automáticamente cuando se registre el logueo correspondiente', {
+        icon: 'ℹ️',
+        duration: 4000
+      });
     }
   };
 

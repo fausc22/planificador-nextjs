@@ -72,8 +72,11 @@ export default function MarcarAsistencia() {
         } catch (error) {
           console.error('Error marcando asistencia:', error);
           
-          const mensaje = error.response?.data?.message || 'Error al registrar marcación';
-          const rechazado = error.response?.data?.rechazado;
+          const errorData = error.response?.data;
+          const mensaje = errorData?.message || 'Error al registrar marcación';
+          const rechazado = errorData?.rechazado;
+          const tipoError = errorData?.tipo_error;
+          const ultimoLogueo = errorData?.ultimo_logueo;
           
           // Si el error es de contraseña incorrecta
           if (error.response?.status === 403 && mensaje.toLowerCase().includes('contraseña')) {
@@ -84,10 +87,18 @@ export default function MarcarAsistencia() {
             // Fue rechazado por estar fuera de rango o validación fallida
             setResultado({
               rechazado: true,
-              ...error.response.data.data
+              ...errorData.data
             });
             setMarcacionCompletada(true);
             toast.error(mensaje, { duration: 5000 });
+          } else if (tipoError && ultimoLogueo) {
+            // Error de secuencia con información del último logueo
+            const accionSugerida = tipoError === 'DOS_INGRESOS' ? 'EGRESO' : 'INGRESO';
+            let mensajeCompleto = mensaje;
+            mensajeCompleto += `\n\nÚltimo logueo: ${ultimoLogueo.accion} el ${ultimoLogueo.fecha} a las ${ultimoLogueo.hora}.`;
+            mensajeCompleto += `\nDebe registrar: ${accionSugerida}`;
+            
+            toast.error(mensajeCompleto, { duration: 6000 });
           } else {
             toast.error(mensaje, { duration: 5000 });
             

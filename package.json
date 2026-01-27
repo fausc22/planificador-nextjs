@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:static": "next build && echo 'Build estático generado en /out'",
+    "build:static": "BUILD_STATIC=true next build && echo 'Build estático generado en /out'",
     "start": "next start",
     "lint": "next lint",
     "clean": "rm -rf .next out node_modules",

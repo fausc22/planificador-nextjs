@@ -183,7 +183,25 @@ export default function Logueos() {
       }
     } catch (error) {
       console.error('Error al actualizar logueo:', error);
-      toast.error('Error al actualizar logueo');
+      
+      // Manejo mejorado de errores con información del backend
+      const errorData = error.response?.data;
+      const tipoError = errorData?.tipo_error;
+      const ultimoLogueo = errorData?.ultimo_logueo;
+      
+      let mensajeError = errorData?.message || 'Error al actualizar logueo';
+      
+      // Si hay información del último logueo, agregarla al mensaje
+      if (ultimoLogueo) {
+        const accionActual = logueoEditar.accion;
+        const accionSugerida = accionActual === 'INGRESO' ? 'EGRESO' : 'INGRESO';
+        mensajeError += `\n\nNo se puede cambiar a ${accionActual}.\nÚltimo logueo: ${ultimoLogueo.accion} el ${ultimoLogueo.fecha} a las ${ultimoLogueo.hora}.\nDebe registrar: ${accionSugerida}`;
+      }
+      
+      // Mostrar error con duración más larga si hay información adicional
+      toast.error(mensajeError, { 
+        duration: ultimoLogueo ? 6000 : 4000 
+      });
     }
   };
 
@@ -249,7 +267,24 @@ export default function Logueos() {
       }
     } catch (error) {
       console.error('Error al crear logueo:', error);
-      toast.error(error.response?.data?.message || 'Error al crear logueo');
+      
+      // Manejo mejorado de errores con información del backend
+      const errorData = error.response?.data;
+      const tipoError = errorData?.tipo_error;
+      const ultimoLogueo = errorData?.ultimo_logueo;
+      
+      let mensajeError = errorData?.message || 'Error al crear logueo';
+      
+      // Si hay información del último logueo, agregarla al mensaje
+      if (ultimoLogueo) {
+        const accionSugerida = nuevoLogueo.accion === 'INGRESO' ? 'EGRESO' : 'INGRESO';
+        mensajeError += `\n\nÚltimo logueo: ${ultimoLogueo.accion} el ${ultimoLogueo.fecha} a las ${ultimoLogueo.hora}.\nDebe registrar: ${accionSugerida}`;
+      }
+      
+      // Mostrar error con duración más larga si hay información adicional
+      toast.error(mensajeError, { 
+        duration: ultimoLogueo ? 6000 : 4000 
+      });
     }
   };
 

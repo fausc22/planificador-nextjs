@@ -385,6 +385,14 @@ export const notificacionesAPI = {
   
   cambiarEstadoNotificaciones: (estado) =>
     apiClient.post('/notificaciones/estado', { estado }),
+  
+  // FASE 2: Obtener todas las notificaciones guardadas
+  obtenerTodasNotificaciones: (filtros = {}) =>
+    apiClient.get('/notificaciones', { params: filtros }),
+  
+  // FASE 2: Eliminar notificación manualmente
+  eliminarNotificacion: (id) =>
+    apiClient.delete(`/notificaciones/${id}`),
 };
 
 export const feriadosAPI = {

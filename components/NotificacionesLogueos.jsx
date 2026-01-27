@@ -1,6 +1,6 @@
 // components/NotificacionesLogueos.jsx - Componente de notificaciones de logueos faltantes
 import { useState, useEffect } from 'react';
-import { FiAlertCircle, FiClock, FiRefreshCw, FiCheckCircle, FiChevronDown, FiChevronUp, FiMessageCircle } from 'react-icons/fi';
+import { FiAlertCircle, FiClock, FiRefreshCw, FiCheckCircle, FiChevronDown, FiChevronUp, FiMessageCircle, FiX } from 'react-icons/fi';
 import { notificacionesAPI } from '../utils/api';
 import toast from 'react-hot-toast';
 import Loading from './Loading';
@@ -86,6 +86,39 @@ export default function NotificacionesLogueos() {
       toast.error(errorMsg);
     } finally {
       setVerificando(false);
+    }
+  };
+
+  // Función para obtener el texto del tipo de notificación
+  const obtenerTipoNotificacion = (tipo) => {
+    const tipos = {
+      'FALTA_LOGUEO': 'Falta logueo',
+      'INCONSISTENCIA': 'Inconsistencia detectada',
+      'TURNO_ABIERTO': 'Turno abierto > 24h',
+      'FUERA_DE_MARGEN': 'Fuera de margen'
+    };
+    return tipos[tipo] || tipo || 'Notificación';
+  };
+
+  // Función para eliminar notificación
+  const eliminarNotificacion = async (notif) => {
+    // Si tiene ID, eliminar de la base de datos
+    if (notif.id) {
+      if (!confirm('¿Estás seguro de que deseas eliminar esta notificación?')) {
+        return;
+      }
+      
+      try {
+        await notificacionesAPI.eliminarNotificacion(notif.id);
+        toast.success('Notificación eliminada');
+        cargarNotificaciones(); // Recargar lista
+      } catch (error) {
+        console.error('Error eliminando notificación:', error);
+        toast.error('Error al eliminar notificación');
+      }
+    } else {
+      // Si no tiene ID, solo mostrar mensaje (notificación temporal)
+      toast.info('Esta notificación se eliminará automáticamente cuando se registre el logueo correspondiente');
     }
   };
 
@@ -269,14 +302,23 @@ export default function NotificacionesLogueos() {
         <div className="space-y-3">
           {notificaciones.notificaciones.map((notif, index) => (
             <div
-              key={index}
-              className={`p-4 rounded-lg border-2 ${
+              key={notif.id || index}
+              className={`p-4 rounded-lg border-2 relative ${
                 notif.severidad === 'ALTA'
                   ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800'
                   : 'bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800'
               }`}
             >
-              <div className="flex items-start justify-between">
+              {/* Botón X para eliminar */}
+              <button
+                onClick={() => eliminarNotificacion(notif)}
+                className="absolute top-2 right-2 p-1.5 text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg transition-colors"
+                title="Eliminar notificación"
+              >
+                <FiX className="text-lg" />
+              </button>
+
+              <div className="flex items-start justify-between pr-8">
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-wrap items-center gap-2 mb-2">
                     <span className={`px-2 py-1 rounded text-xs font-semibold whitespace-nowrap ${
@@ -287,7 +329,7 @@ export default function NotificacionesLogueos() {
                       {notif.severidad}
                     </span>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {notif.tipo === 'FALTA_LOGUEO' ? 'Falta logueo' : 'Fuera de margen'}
+                      {obtenerTipoNotificacion(notif.tipo)}
                     </span>
                   </div>
                   <h4 className="font-semibold text-sm sm:text-base text-gray-900 dark:text-white mb-1 break-words">
@@ -297,10 +339,12 @@ export default function NotificacionesLogueos() {
                     {notif.mensaje}
                   </p>
                   <div className="flex flex-wrap gap-2 sm:gap-3 text-xs text-gray-600 dark:text-gray-400">
-                    <div className="flex items-center space-x-1 min-w-0">
-                      <FiClock className="flex-shrink-0" />
-                      <span className="break-words">Turno: {notif.turno} a las {notif.horaTurno}</span>
-                    </div>
+                    {notif.turno && notif.horaTurno && (
+                      <div className="flex items-center space-x-1 min-w-0">
+                        <FiClock className="flex-shrink-0" />
+                        <span className="break-words">Turno: {notif.turno} a las {notif.horaTurno}</span>
+                      </div>
+                    )}
                     {notif.horaRegistrada && (
                       <div className="flex items-center space-x-1 min-w-0">
                         <span className="break-words">Registrado: {notif.horaRegistrada}</span>

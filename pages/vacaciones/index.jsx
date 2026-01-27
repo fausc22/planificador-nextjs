@@ -297,14 +297,33 @@ export default function Vacaciones() {
     if (!vacacionEliminar) return;
 
     try {
-      await apiClient.delete(`/vacaciones/${vacacionEliminar.id}`);
-      toast.success('Vacaciones eliminadas exitosamente. El planificador ha sido actualizado.');
+      const response = await apiClient.delete(`/vacaciones/${vacacionEliminar.id}`);
+      
+      // Mensaje mejorado basado en la respuesta del backend
+      const mensaje = response.data?.message || 'Vacaciones eliminadas exitosamente';
+      const diasReestablecidos = response.data?.data?.diasReestablecidos;
+      
+      if (diasReestablecidos && diasReestablecidos > 0) {
+        toast.success(`${mensaje}. ${diasReestablecidos} día(s) libre(s) reestablecido(s). El planificador ha sido actualizado.`);
+      } else {
+        toast.success(`${mensaje}. El planificador ha sido actualizado.`);
+      }
+      
       cerrarModalEliminar();
       cargarVacaciones(paginacion.page);
       cargarEmpleados();
     } catch (error) {
       console.error('Error al eliminar:', error);
-      toast.error(error.response?.data?.message || 'Error al eliminar vacaciones');
+      const errorMessage = error.response?.data?.message || 'Error al eliminar vacaciones';
+      
+      // Mensajes más descriptivos según el tipo de error
+      if (errorMessage.includes('ya pasó') || errorMessage.includes('ya fue cumplida')) {
+        toast.error('Esta vacación ya fue cumplida. Los días no se reestablecerán como libres.');
+      } else if (errorMessage.includes('no existe')) {
+        toast.error('Vacación eliminada. El empleado no existe en el sistema.');
+      } else {
+        toast.error(errorMessage);
+      }
     }
   };
 
@@ -962,7 +981,19 @@ export default function Vacaciones() {
                   </p>
                 </div>
                 <p className="text-sm text-blue-600 dark:text-blue-400 font-medium">
-                  Los días de vacaciones serán restaurados y el planificador será actualizado.
+                  {(() => {
+                    // Verificar si la vacación ya pasó
+                    const [dia, mes, anio] = vacacionEliminar.regreso.split('/').map(Number);
+                    const fechaRegreso = new Date(anio, mes - 1, dia);
+                    const hoy = new Date();
+                    hoy.setHours(0, 0, 0, 0);
+                    
+                    if (fechaRegreso < hoy) {
+                      return 'Esta vacación ya fue cumplida. Los días no se reestablecerán como libres.';
+                    } else {
+                      return 'Los días de vacaciones serán reestablecidos como libres y el planificador será actualizado.';
+                    }
+                  })()}
                 </p>
               </div>
 

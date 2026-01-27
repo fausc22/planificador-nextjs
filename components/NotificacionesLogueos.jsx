@@ -12,6 +12,8 @@ export default function NotificacionesLogueos() {
   const [verificando, setVerificando] = useState(false);
   const [notificacionesActivas, setNotificacionesActivas] = useState(true);
   const [cambiandoEstado, setCambiandoEstado] = useState(false);
+  // Estado para trackear notificaciones eliminadas localmente (sin ID)
+  const [notificacionesEliminadasLocal, setNotificacionesEliminadasLocal] = useState(new Set());
 
   useEffect(() => {
     cargarNotificaciones();
@@ -55,7 +57,28 @@ export default function NotificacionesLogueos() {
       setLoading(true);
       const response = await notificacionesAPI.obtenerLogueosFaltantes();
       if (response.data.success) {
-        setNotificaciones(response.data.data);
+        const datos = response.data.data;
+        
+        // Filtrar notificaciones eliminadas localmente (las que no tienen ID)
+        if (datos.notificaciones) {
+          const notificacionesFiltradas = datos.notificaciones.filter(notif => {
+            if (!notif.id) {
+              // Para notificaciones sin ID, verificar si fueron eliminadas localmente
+              const claveTemporal = `${notif.empleado}_${notif.fecha}_${notif.tipo}_${notif.mensaje?.substring(0, 50)}`;
+              return !notificacionesEliminadasLocal.has(claveTemporal);
+            }
+            return true; // Las que tienen ID siempre se muestran (se eliminan de BD)
+          });
+          
+          setNotificaciones({
+            ...datos,
+            notificaciones: notificacionesFiltradas,
+            total: notificacionesFiltradas.length,
+            alta: notificacionesFiltradas.filter(n => n.severidad === 'ALTA').length
+          });
+        } else {
+          setNotificaciones(datos);
+        }
       }
     } catch (error) {
       console.error('Error cargando notificaciones:', error);
@@ -117,12 +140,36 @@ export default function NotificacionesLogueos() {
         toast.error('Error al eliminar notificación');
       }
     } else {
-      // Si no tiene ID, solo mostrar mensaje (notificación temporal)
-      // Usar toast() en lugar de toast.info() porque react-hot-toast 2.4.1 no tiene toast.info
-      toast('Esta notificación se eliminará automáticamente cuando se registre el logueo correspondiente', {
-        icon: 'ℹ️',
-        duration: 4000
+      // Si no tiene ID, eliminar del estado local (ocultarla de la vista)
+      // Crear una clave única para identificar esta notificación temporal
+      const claveTemporal = `${notif.empleado}_${notif.fecha}_${notif.tipo}_${notif.mensaje?.substring(0, 50)}`;
+      
+      // Agregar a la lista de eliminadas localmente y actualizar estado inmediatamente
+      setNotificacionesEliminadasLocal(prev => {
+        const nuevoSet = new Set([...prev, claveTemporal]);
+        
+        // Actualizar el estado local para ocultar la notificación
+        if (notificaciones && notificaciones.notificaciones) {
+          const notificacionesFiltradas = notificaciones.notificaciones.filter(n => {
+            if (!n.id) {
+              const clave = `${n.empleado}_${n.fecha}_${n.tipo}_${n.mensaje?.substring(0, 50)}`;
+              return !nuevoSet.has(clave);
+            }
+            return true;
+          });
+          
+          setNotificaciones({
+            ...notificaciones,
+            notificaciones: notificacionesFiltradas,
+            total: notificacionesFiltradas.length,
+            alta: notificacionesFiltradas.filter(n => n.severidad === 'ALTA').length
+          });
+        }
+        
+        return nuevoSet;
       });
+      
+      toast.success('Notificación ocultada');
     }
   };
 

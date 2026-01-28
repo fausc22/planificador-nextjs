@@ -171,7 +171,8 @@ export default function Logueos() {
 
     try {
       const response = await apiClient.put(`/logueo/${anio}/${logueoEditar.id}`, {
-        hora: nuevaHora
+        hora: nuevaHora,
+        manual: true
       });
 
       if (response.data.success) {
@@ -257,7 +258,8 @@ export default function Logueos() {
         fecha: fechaFormateada,
         hora: nuevoLogueo.hora,
         accion: nuevoLogueo.accion,
-        mes: mesNombre
+        mes: mesNombre,
+        manual: true
       });
 
       if (response.data.success) {

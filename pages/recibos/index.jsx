@@ -171,14 +171,14 @@ export default function Recibos() {
     }).format(valor || 0);
   };
 
-  const calcularDescuento20 = () => {
+  const calcularDescuento10 = () => {
     const consumos = reciboData?.recibo?.consumos || 0;
-    return Math.round(consumos * 0.8 * 100) / 100;
+    return Math.round(consumos * 0.9 * 100) / 100;
   };
 
   const calcularTotal = () => {
     const trabajadas = reciboData?.recibo?.hsTrabajadasValor || 0;
-    const descuento = calcularDescuento20();
+    const descuento = calcularDescuento10();
     
     // Sumar bonificaciones y restar deducciones de extras
     const bonificaciones = reciboData?.extras?.suma || 0;
@@ -555,11 +555,11 @@ export default function Recibos() {
                       
                       <div>
                         <label className="block text-sm text-gray-700 dark:text-gray-300 mb-1">
-                          Descuento 20%:
+                          Descuento 10%:
                         </label>
                         <input
                           type="text"
-                          value={formatearDinero(calcularDescuento20())}
+                          value={formatearDinero(calcularDescuento10())}
                           disabled
                           className="input w-full bg-gray-100 dark:bg-gray-800 cursor-not-allowed"
                         />

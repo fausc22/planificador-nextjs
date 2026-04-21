@@ -5,6 +5,7 @@ import Layout from '../../components/Layout';
 import { useEmpleados } from '../../hooks/useEmpleados';
 import { useEmpleadoForm } from '../../hooks/useEmpleadoForm';
 import CustomSelect from '../../components/ui/CustomSelect';
+import { getApiOrigin } from '../../utils/api';
 import { FiPlus, FiEdit, FiTrash2, FiSearch, FiUser, FiMail, FiCalendar, FiDollarSign, FiX, FiSave, FiGrid, FiList, FiAlertCircle, FiCheck } from 'react-icons/fi';
 
 export default function Empleados() {
@@ -159,9 +160,7 @@ export default function Empleados() {
 
   const getFotoUrl = (empleado) => {
     if (empleado.foto_perfil_url) {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/planificador';
-      const baseUrl = apiUrl.replace(/\/planificador$/, '');
-      return `${baseUrl}${empleado.foto_perfil_url}`;
+      return `${getApiOrigin()}${empleado.foto_perfil_url}`;
     }
     return null;
   };

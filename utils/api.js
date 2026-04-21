@@ -5,6 +5,15 @@ import { isTokenExpired, clearAuthData } from './tokenUtils';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
+/** Origen de la API (ej. https://api-plani.mycarrito.com.ar). Usar para URLs de uploads/estáticos. */
+export const getApiOrigin = () => {
+  try {
+    return new URL(API_URL || 'http://localhost:3001/api').origin;
+  } catch {
+    return 'http://localhost:3001';
+  }
+};
+
 // Crear instancia de axios
 export const apiClient = axios.create({
   baseURL: API_URL,

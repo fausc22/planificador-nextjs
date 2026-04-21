@@ -6,7 +6,7 @@ import Layout from '../../components/Layout';
 import Loading from '../../components/Loading';
 import CustomSelect from '../../components/ui/CustomSelect';
 import { FiDollarSign, FiUser, FiEdit2, FiSave, FiX, FiTrendingUp, FiTrendingDown, FiExternalLink, FiDownload, FiLoader } from 'react-icons/fi';
-import { apiClient } from '../../utils/api';
+import { apiClient, getApiOrigin } from '../../utils/api';
 import toast from 'react-hot-toast';
 
 export default function Recibos() {
@@ -241,8 +241,7 @@ export default function Recibos() {
 
   const getFotoUrl = (empleado) => {
     if (empleado?.foto_perfil_url) {
-      const baseUrl = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001').replace('/api', '');
-      return `${baseUrl}/uploads/empleados/${empleado.foto_perfil_url}`;
+      return `${getApiOrigin()}/uploads/empleados/${empleado.foto_perfil_url}`;
     }
     return null;
   };

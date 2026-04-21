@@ -6,7 +6,7 @@ import Loading from '../../components/Loading';
 import EmptyState from '../../components/EmptyState';
 import CustomSelect from '../../components/ui/CustomSelect';
 import { FiClock, FiUser, FiLogIn, FiLogOut, FiEdit2, FiTrash2, FiKey, FiX, FiEye, FiEyeOff, FiPlus, FiImage, FiCalendar } from 'react-icons/fi';
-import { apiClient } from '../../utils/api';
+import { apiClient, getApiOrigin } from '../../utils/api';
 import toast from 'react-hot-toast';
 
 export default function Logueos() {
@@ -292,11 +292,7 @@ export default function Logueos() {
 
   const abrirModalFoto = (logueo) => {
     if (logueo.foto_logueo) {
-      // Construir URL para la foto
-      // NEXT_PUBLIC_API_URL = https://mycarrito.com.ar/api/planificador
-      // Necesitamos: https://mycarrito.com.ar/api/uploads/logueos/foto.jpg
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/planificador';
-      const baseUrl = apiUrl.replace(/\/planificador$/, '');
+      const baseUrl = getApiOrigin();
       const fotoUrl = `${baseUrl}/uploads/logueos/${logueo.foto_logueo}`;
       
       console.log('📷 Abriendo foto:', fotoUrl);
